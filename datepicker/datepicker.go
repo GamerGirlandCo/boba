@@ -106,9 +106,7 @@ func (d *dateModel) wrapNav(key string) {
 	prevo := d.internalGrid[blah[0]][blah[1]]
 	switch key {
 	case "left":
-		logPos(*d)
 		(*d).cursorX--
-		logPos(*d)
 		if (*d).cursorX < 0 {
 			log.Print("y < 0")
 			(*d).cursorX = 6
@@ -121,9 +119,7 @@ func (d *dateModel) wrapNav(key string) {
 			(*d).updateAnchor((cal.MonthStart((*d).anchor.AddDate(0, 0, -1))), diffo)
 		}
 	case "right":
-		logPos(*d)
 		(*d).cursorX++
-		logPos(*d)
 		if (*d).cursorX > 6 {
 			(*d).cursorX = 0
 			if (*d).cursorY < 6-1 {
@@ -135,9 +131,7 @@ func (d *dateModel) wrapNav(key string) {
 			(*d).updateAnchor((cal.MonthStart((*d).anchor.AddDate(0, 0, 1))), diffo)
 		}
 	case "up":
-		logPos(*d)
 		(*d).cursorY--
-		logPos(*d)
 		if (*d).cursorY < 0 {
 			(*d).cursorY = 6 - 1
 		}
@@ -145,11 +139,8 @@ func (d *dateModel) wrapNav(key string) {
 		if diffo.Month() < prevo.date.Month() {
 			(*d).updateAnchor((cal.MonthStart((*d).anchor.AddDate(0, 0, -7))), diffo)
 		}
-		logPos(*d)
 	case "down":
-		logPos(*d)
 		(*d).cursorY++
-		logPos(*d)
 		if (*d).cursorY > 6-1 {
 			(*d).cursorY = 6 - 1
 		}
@@ -158,7 +149,6 @@ func (d *dateModel) wrapNav(key string) {
 			(*d).updateAnchor(cal.MonthStart((*d).anchor.AddDate(0, 0, 7)), diffo)
 		}
 
-		logPos(*d)
 	}
 }
 
