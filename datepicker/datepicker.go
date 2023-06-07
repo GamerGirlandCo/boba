@@ -78,7 +78,6 @@ func (d dateCell) Render() string {
 		return blankCellStyle.Render("")
 	}
 	return cellStyle.Render(mystr)
-
 }
 
 type Model struct {
@@ -199,10 +198,6 @@ func (m Model) View() string {
 	for i := 0; i < 7; i++ {
 		header = append(header, weekStyle.Render(m.internalGrid[0][i].date.Format("Mon")))
 	}
-	// if index == 0 {
-
-	// ret = lipgloss.JoinHorizontal(lipgloss.Center, header...)
-	// }
 	axisY = append(axisY, lipgloss.JoinHorizontal(lipgloss.Center, header...))
 	for i := 0; i < len(m.internalGrid); i++ {
 		axisY = append(axisY, m.renderWeek(i))
@@ -316,7 +311,6 @@ func Initialize() Model {
 	inGrid, y, x := makeMatrix(rlnw, my, mx)
 	inGrid[my][mx].Select(true)
 	inGrid[y][x].Select(true)
-	inGrid[y][x].selected = true
 	startOfMonth := time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.Local)
 	meep := Model{
 		internalGrid: inGrid,
