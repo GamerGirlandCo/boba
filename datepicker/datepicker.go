@@ -77,7 +77,7 @@ func (d dateCell) Render() string {
 
 }
 
-type dateModel struct {
+type Model struct {
 	loaded       bool
 	internalGrid [][]dateCell
 	cursorY      int
@@ -85,7 +85,7 @@ type dateModel struct {
 	anchor       time.Time
 }
 
-func (m dateModel) FindIndex(fn Predicate[dateCell]) [][]int {
+func (m Model) FindIndex(fn Predicate[dateCell]) [][]int {
 	ret := make([][]int, 0)
 	for x := 0; x < len(m.internalGrid)-1; x++ {
 		for y := 0; y < len(m.internalGrid[x])-1; y++ {
@@ -97,62 +97,61 @@ func (m dateModel) FindIndex(fn Predicate[dateCell]) [][]int {
 	return ret
 }
 
-func (m dateModel) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	return nil
 }
-func (d *dateModel) wrapNav(key string) {
-	log.Print(key)
-	var blah []int = []int{d.cursorY, d.cursorX}
-	prevo := d.internalGrid[blah[0]][blah[1]]
+func (m *Model) wrapNav(key string) {
+	var blah []int = []int{m.cursorY, m.cursorX}
+	prevo := m.internalGrid[blah[0]][blah[1]]
 	switch key {
 	case "left":
-		(*d).cursorX--
-		if (*d).cursorX < 0 {
+		(*m).cursorX--
+		if (*m).cursorX < 0 {
 			log.Print("y < 0")
-			(*d).cursorX = 6
-			if (*d).cursorY > 0 {
-				(*d).cursorY--
+			(*m).cursorX = 6
+			if (*m).cursorY > 0 {
+				(*m).cursorY--
 			}
 		}
-		diffo := d.internalGrid[d.cursorY][d.cursorX].date
+		diffo := m.internalGrid[m.cursorY][m.cursorX].date
 		if diffo.Month() < prevo.date.Month() {
-			(*d).updateAnchor((cal.MonthStart((*d).anchor.AddDate(0, 0, -1))), diffo)
+			(*m).updateAnchor((cal.MonthStart((*m).anchor.AddDate(0, 0, -1))), diffo)
 		}
 	case "right":
-		(*d).cursorX++
-		if (*d).cursorX > 6 {
-			(*d).cursorX = 0
-			if (*d).cursorY < 6-1 {
-				(*d).cursorY++
+		(*m).cursorX++
+		if (*m).cursorX > 6 {
+			(*m).cursorX = 0
+			if (*m).cursorY < 6-1 {
+				(*m).cursorY++
 			}
 		}
-		diffo := d.internalGrid[d.cursorY][d.cursorX].date
+		diffo := m.internalGrid[m.cursorY][m.cursorX].date
 		if diffo.Month() > prevo.date.Month() {
-			(*d).updateAnchor((cal.MonthStart((*d).anchor.AddDate(0, 0, 1))), diffo)
+			(*m).updateAnchor((cal.MonthStart((*m).anchor.AddDate(0, 0, 1))), diffo)
 		}
 	case "up":
-		(*d).cursorY--
-		if (*d).cursorY < 0 {
-			(*d).cursorY = 6 - 1
+		(*m).cursorY--
+		if (*m).cursorY < 0 {
+			(*m).cursorY = 6 - 1
 		}
-		diffo := d.internalGrid[d.cursorY][d.cursorX].date
+		diffo := m.internalGrid[m.cursorY][m.cursorX].date
 		if diffo.Month() < prevo.date.Month() {
-			(*d).updateAnchor((cal.MonthStart((*d).anchor.AddDate(0, 0, -7))), diffo)
+			(*m).updateAnchor((cal.MonthStart((*m).anchor.AddDate(0, 0, -7))), diffo)
 		}
 	case "down":
-		(*d).cursorY++
-		if (*d).cursorY > 6-1 {
-			(*d).cursorY = 6 - 1
+		(*m).cursorY++
+		if (*m).cursorY > 6-1 {
+			(*m).cursorY = 6 - 1
 		}
-		diffo := d.internalGrid[d.cursorY][d.cursorX].date
+		diffo := m.internalGrid[m.cursorY][m.cursorX].date
 		if diffo.Month() > prevo.date.Month() {
-			(*d).updateAnchor(cal.MonthStart((*d).anchor.AddDate(0, 0, 7)), diffo)
+			(*m).updateAnchor(cal.MonthStart((*m).anchor.AddDate(0, 0, 7)), diffo)
 		}
 
 	}
 }
 
-func (m dateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.internalGrid[m.cursorY][m.cursorX].Select(false)
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -186,11 +185,11 @@ func (m dateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m dateModel) View() string {
+func (m Model) View() string {
 	s := ""
-	axisY := make([]string, 1)
+	axisY := make([]string, 0)
 	wo, _, _ := term.GetSize(int(os.Stdout.Fd()))
-	axisY = append(axisY, monthStyle.Render(lipgloss.PlaceHorizontal(wo, lipgloss.Center, m.internalGrid[0][6].date.Format("January"))))
+	axisY = append(axisY, monthStyle.Render(lipgloss.PlaceHorizontal(wo, lipgloss.Center, m.internalGrid[0][6].date.Format("January 2006"))))
 
 	for i := 0; i < len(m.internalGrid); i++ {
 		axisY = append(axisY, m.renderWeek(i))
@@ -200,21 +199,21 @@ func (m dateModel) View() string {
 	return s
 }
 
-func (d dateModel) renderWeek(index int) string {
+func (m Model) renderWeek(index int) string {
 	longlong := make([]string, 1)
-	for i := 0; i < len(d.internalGrid[index]); i++ {
-		longlong = append(longlong, d.internalGrid[index][i].Render())
+	for i := 0; i < len(m.internalGrid[index]); i++ {
+		longlong = append(longlong, m.internalGrid[index][i].Render())
 	}
 	return lipgloss.JoinHorizontal(lipgloss.Center, longlong...)
 }
 
-func (d *dateModel) updateAnchor(argo time.Time, now time.Time) {
-	d.anchor = argo
+func (m *Model) updateAnchor(argo time.Time, now time.Time) {
+	m.anchor = argo
 	yy, xx := getDefaultMatrix(now)
 	ingrid, _, _ := makeMatrix(now, yy, xx)
-	d.internalGrid = ingrid
-	d.cursorY = yy
-	d.cursorX = xx
+	m.internalGrid = ingrid
+	m.cursorY = yy
+	m.cursorX = xx
 }
 
 func getDefaultMatrix(cur time.Time) (int, int) {
@@ -233,7 +232,6 @@ func getDefaultMatrix(cur time.Time) (int, int) {
 	div := int((int(diffB.Hours()) / 24) / 7)
 
 	return div, modulo
-
 }
 
 func makeMatrix(sel time.Time, ya int, xa int) ([][]dateCell, int, int) {
@@ -282,8 +280,8 @@ func makeMatrix(sel time.Time, ya int, xa int) ([][]dateCell, int, int) {
 	return g, intX, intY
 }
 
-func logPos(d dateModel) {
-	log.Printf("current!!! -- [%d][%d]", d.cursorY, d.cursorX)
+func logPos(m Model) {
+	log.Printf("current!!! -- [%d][%d]", m.cursorY, m.cursorX)
 }
 
 func printGrid(d [][]dateCell) {
@@ -298,7 +296,7 @@ func printGrid(d [][]dateCell) {
 	log.Println(d[1][6].date.Format("January 2006"))
 }
 
-func Initialize() dateModel {
+func Initialize() Model {
 	rlnw := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Local)
 
 	my, mx := getDefaultMatrix(rlnw)
@@ -307,13 +305,12 @@ func Initialize() dateModel {
 	inGrid[y][x].Select(true)
 	inGrid[y][x].selected = true
 	startOfMonth := time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.Local)
-	meep := dateModel{
+	meep := Model{
 		internalGrid: inGrid,
 		cursorY:      y,
 		cursorX:      x,
 		anchor:       startOfMonth,
 		loaded:       true,
-		// currentDate: *meep.internalGrid[*meep.cursorY][*meep.cursorX],
 	}
 	return meep
 }
