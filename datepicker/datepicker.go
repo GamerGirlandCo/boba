@@ -50,6 +50,10 @@ var (
 	blankCellStyle = lipgloss.NewStyle().
 			Padding(1, 3).
 			Align(lipgloss.Center)
+	weekStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#baaec4")).
+			Align(lipgloss.Center).
+			Padding(0, 1, 1, 2)
 )
 
 type dateCell struct {
@@ -191,6 +195,15 @@ func (m Model) View() string {
 	wo, _, _ := term.GetSize(int(os.Stdout.Fd()))
 	axisY = append(axisY, monthStyle.Render(lipgloss.PlaceHorizontal(wo, lipgloss.Center, m.internalGrid[0][6].date.Format("January 2006"))))
 
+	header := make([]string, 0)
+	for i := 0; i < 7; i++ {
+		header = append(header, weekStyle.Render(m.internalGrid[0][i].date.Format("Mon")))
+	}
+	// if index == 0 {
+
+	// ret = lipgloss.JoinHorizontal(lipgloss.Center, header...)
+	// }
+	axisY = append(axisY, lipgloss.JoinHorizontal(lipgloss.Center, header...))
 	for i := 0; i < len(m.internalGrid); i++ {
 		axisY = append(axisY, m.renderWeek(i))
 	}
