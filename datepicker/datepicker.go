@@ -8,6 +8,8 @@ import (
 	// "strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	cal "github.com/rickar/cal/v2"
@@ -56,6 +58,77 @@ var (
 			Padding(0, 1, 1, 2)
 )
 
+type keyMap struct {
+	Up          key.Binding
+	Down        key.Binding
+	Left        key.Binding
+	Right       key.Binding
+	PrevMonth   key.Binding
+	NextMonth   key.Binding
+	StartOfWeek key.Binding
+	EndOfWeek   key.Binding
+	Help        key.Binding
+	Choose       key.Binding
+	Quit key.Binding
+}
+
+func (k keyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Choose, k.Help}
+}
+
+func (k keyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Up, k.Down, k.Left, k.Right, k.Choose, k.PrevMonth, k.NextMonth, k.StartOfWeek, k.EndOfWeek, k.Help, k.Quit},
+	}
+}
+
+var keys = keyMap{
+	Up: key.NewBinding(
+		key.WithKeys("up", "k"),
+		key.WithHelp("↑/k", "move up"),
+	),
+	Down: key.NewBinding(
+		key.WithKeys("down", "j"),
+		key.WithHelp("↓/j", "move down"),
+	),
+	Left: key.NewBinding(
+		key.WithKeys("left", "h"),
+		key.WithHelp("←/h", "move left"),
+	),
+	Right: key.NewBinding(
+		key.WithKeys("right", "l"),
+		key.WithHelp("→/l", "move right"),
+	),
+	PrevMonth: key.NewBinding(
+		key.WithKeys(tea.KeyPgUp.String(), "shift+up"),
+		key.WithHelp("PgUp/Shift+↑", "go to next month"),
+	),
+	NextMonth: key.NewBinding(
+		key.WithKeys(tea.KeyPgDown.String(), "shift+down"),
+		key.WithHelp("PgDn/Shift+↓", "go to next month"),
+	),
+	StartOfWeek: key.NewBinding(
+		key.WithKeys("shift+left", "0"),
+		key.WithHelp("Shift+←/0", "move to beginning of current week"),
+	),
+	EndOfWeek: key.NewBinding(
+		key.WithKeys("shift+right", "$"),
+		key.WithHelp("Shift+→/$", "move to end of current week"),
+	),
+	Help: key.NewBinding(
+		key.WithKeys(tea.KeyCtrlQuestionMark.String()),
+		key.WithHelp("?", "show help"),
+	),
+	Choose: key.NewBinding(
+		key.WithKeys(tea.KeySpace.String(), tea.KeyEnter.String()),
+		key.WithHelp("Enter/Space", "finalize selection"),
+	),
+	Quit: key.NewBinding(
+		key.WithKeys("ctrl+c", "q"),
+		key.WithHelp("Ctrl+c/q", "quit program"),
+	),
+}
+
 type dateCell struct {
 	date     time.Time
 	selected bool
@@ -86,6 +159,8 @@ type Model struct {
 	cursorY      int
 	cursorX      int
 	anchor       time.Time
+	keys keyMap
+	help help.Model
 }
 
 func (m Model) FindIndex(fn Predicate[dateCell]) [][]int {
@@ -103,96 +178,95 @@ func (m Model) FindIndex(fn Predicate[dateCell]) [][]int {
 func (m Model) Init() tea.Cmd {
 	return nil
 }
-func (m *Model) wrapNav(key string) {
-	var blah []int = []int{m.cursorY, m.cursorX}
-	prevo := m.internalGrid[blah[0]][blah[1]]
-	switch key {
-	case "left":
-		(*m).cursorX--
-		if (*m).cursorX < 0 {
-			log.Print("y < 0")
-			(*m).cursorX = 6
-			if (*m).cursorY > 0 {
-				(*m).cursorY--
-			}
-		}
-		diffo := m.internalGrid[m.cursorY][m.cursorX].date
-		if diffo.Month() < prevo.date.Month() {
-			(*m).updateAnchor((cal.MonthStart((*m).anchor.AddDate(0, 0, -1))), diffo)
-		}
-	case "right":
-		(*m).cursorX++
-		if (*m).cursorX > 6 {
-			(*m).cursorX = 0
-			if (*m).cursorY < 6-1 {
-				(*m).cursorY++
-			}
-		}
-		diffo := m.internalGrid[m.cursorY][m.cursorX].date
-		if diffo.Month() > prevo.date.Month() {
-			(*m).updateAnchor((cal.MonthStart((*m).anchor.AddDate(0, 0, 1))), diffo)
-		}
-	case "up":
-		(*m).cursorY--
-		if (*m).cursorY < 0 {
-			(*m).cursorY = 6 - 1
-		}
-		diffo := m.internalGrid[m.cursorY][m.cursorX].date
-		if diffo.Month() < prevo.date.Month() {
-			(*m).updateAnchor((cal.MonthStart((*m).anchor.AddDate(0, 0, -7))), diffo)
-		}
-	case "down":
-		(*m).cursorY++
-		if (*m).cursorY > 6-1 {
-			(*m).cursorY = 6 - 1
-		}
-		diffo := m.internalGrid[m.cursorY][m.cursorX].date
-		if diffo.Month() > prevo.date.Month() {
-			(*m).updateAnchor(cal.MonthStart((*m).anchor.AddDate(0, 0, 7)), diffo)
-		}
-
-	}
-}
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	m.internalGrid[m.cursorY][m.cursorX].Select(false)
+	m.internalGrid[m.cursorY][m.cursorX].toggle(false)
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.help.Width = msg.Width
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
+		var blah []int = []int{m.cursorY, m.cursorX}
+		prevo := m.internalGrid[blah[0]][blah[1]]
+		switch {
+		case key.Matches(msg, m.keys.Quit):
 			return m, tea.Quit
-		case "up", "down":
-			m.wrapNav(msg.String())
-		case tea.KeyLeft.String(), tea.KeyRight.String(), "left", "right":
-			m.wrapNav(msg.String())
-		case tea.KeyPgDown.String():
+		case key.Matches(msg, m.keys.Down):
+			m.cursorY++
+			if m.cursorY > 6-1 {
+				m.cursorY = 6 - 1
+			}
+			diffo := m.internalGrid[m.cursorY][m.cursorX].date
+			if diffo.Month() > prevo.date.Month() {
+				m.updateAnchor(cal.MonthStart(m.anchor.AddDate(0, 0, 7)), diffo)
+			}
+		case key.Matches(msg, m.keys.Up):
+			m.cursorY--
+			if m.cursorY < 0 {
+				m.cursorY = 6 - 1
+			}
+			diffo := m.internalGrid[m.cursorY][m.cursorX].date
+			if diffo.Month() < prevo.date.Month() {
+				m.updateAnchor((cal.MonthStart(m.anchor.AddDate(0, 0, -7))), diffo)
+			}
+		case key.Matches(msg, m.keys.Left):
+			m.cursorX--
+			if m.cursorX < 0 {
+				log.Print("y < 0")
+				m.cursorX = 6
+				if m.cursorY > 0 {
+					m.cursorY--
+				}
+			}
+			diffo := m.internalGrid[m.cursorY][m.cursorX].date
+			if diffo.Month() < prevo.date.Month() {
+				m.updateAnchor((cal.MonthStart(m.anchor.AddDate(0, 0, -1))), diffo)
+			}
+		case key.Matches(msg, m.keys.Right):
+			m.cursorX++
+			if m.cursorX > 6 {
+				m.cursorX = 0
+				if m.cursorY < 6-1 {
+					m.cursorY++
+				}
+			}
+			diffo := m.internalGrid[m.cursorY][m.cursorX].date
+			if diffo.Month() > prevo.date.Month() {
+				m.updateAnchor((cal.MonthStart(m.anchor.AddDate(0, 0, 1))), diffo)
+			}
+		case key.Matches(msg, m.keys.NextMonth):
 			addo := m.anchor.AddDate(0, 1, 0)
 			m.updateAnchor(cal.MonthStart(addo), addo)
-		case tea.KeyPgUp.String():
+		case key.Matches(msg, m.keys.PrevMonth):
 			addo := m.anchor.AddDate(0, -1, 0)
 			m.updateAnchor(cal.MonthStart(addo), addo)
-		}
-		inGrid, _, _ := makeMatrix(m.internalGrid[m.cursorY][m.cursorX].date, m.cursorY, m.cursorX)
-		m.internalGrid = inGrid
-		found := m.FindIndex(func(dd dateCell) bool {
-			return dd.selected
-		})
-		log.Printf("the length of findex == %d", len(found))
-		for l, val := range found {
-			log.Printf("found @ %d -- [%d][%d]", l, val[0], val[1])
+		case key.Matches(msg, m.keys.StartOfWeek):
+			m.cursorX = 0
+			diffo := m.internalGrid[m.cursorY][m.cursorX].date
+			if diffo.Month() < prevo.date.Month() {
+				m.updateAnchor((cal.MonthStart(m.anchor.AddDate(0, 0, 1))), diffo)
+			}
+		case key.Matches(msg, m.keys.EndOfWeek):
+			m.cursorX = 6
+			diffo := m.internalGrid[m.cursorY][m.cursorX].date
+			if diffo.Month() > prevo.date.Month() {
+				m.updateAnchor((cal.MonthStart(m.anchor.AddDate(0, 0, 1))), diffo)
+			}
 		}
 	}
 	inGrid, _, _ := makeMatrix(m.internalGrid[m.cursorY][m.cursorX].date, m.cursorY, m.cursorX)
 	m.internalGrid = inGrid
-	// m.selectedDate = m.internalGrid[m.cursorY][m.cursorX].date
 	return m, nil
 }
 
 func (m Model) View() string {
+	return lipgloss.JoinHorizontal(0.33, m.calendar(), m.help.View(m.keys))
+}
+
+func (m Model) calendar() string {
 	s := ""
 	axisY := make([]string, 0)
 	wo, _, _ := term.GetSize(int(os.Stdout.Fd()))
-	axisY = append(axisY, monthStyle.Render(lipgloss.PlaceHorizontal(wo, lipgloss.Center, m.internalGrid[0][6].date.Format("January 2006"))))
+	axisY = append(axisY, monthStyle.Render(lipgloss.PlaceHorizontal(int(wo/2), lipgloss.Center, m.internalGrid[0][6].date.Format("January 2006"))))
 
 	header := make([]string, 0)
 	for i := 0; i < 7; i++ {
@@ -222,6 +296,10 @@ func (m *Model) updateAnchor(argo time.Time, now time.Time) {
 	m.internalGrid = ingrid
 	m.cursorY = yy
 	m.cursorX = xx
+}
+
+func (m Model) Value() time.Time {
+	return m.internalGrid[m.cursorY][m.cursorX].date
 }
 
 func getDefaultMatrix(cur time.Time) (int, int) {
@@ -293,7 +371,6 @@ func logPos(m Model) {
 }
 
 func printGrid(d [][]dateCell) {
-
 	for x, som := range d {
 		s := ""
 		for y := range som {
@@ -309,15 +386,19 @@ func Initialize() Model {
 
 	my, mx := getDefaultMatrix(rlnw)
 	inGrid, y, x := makeMatrix(rlnw, my, mx)
-	inGrid[my][mx].Select(true)
-	inGrid[y][x].Select(true)
+	inGrid[my][mx].toggle(true)
+	inGrid[y][x].toggle(true)
 	startOfMonth := time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.Local)
+	hell := help.New()
+	hell.ShowAll = true
 	meep := Model{
 		internalGrid: inGrid,
 		cursorY:      y,
 		cursorX:      x,
 		anchor:       startOfMonth,
 		loaded:       true,
+		help: hell,
+		keys: keys,
 	}
 	return meep
 }
