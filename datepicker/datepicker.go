@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	bordah = lipgloss.Border{
+	roundBorder = lipgloss.Border{
 		Top:         "─",
 		Bottom:      "─",
 		Left:        "│",
@@ -28,7 +28,7 @@ var (
 	}
 
 	cellStyle = lipgloss.NewStyle().
-			Border(bordah, true).
+			Border(roundBorder, true).
 			BorderForeground(lipgloss.Color("#5c5e9f")).
 			Padding(0, 1).
 			Foreground(lipgloss.Color("#ffffff")).
@@ -41,7 +41,7 @@ var (
 			Padding(2).
 			Margin(2)
 	selectedCellStyle = lipgloss.NewStyle().
-				Border(bordah, true).
+				Border(roundBorder, true).
 				BorderForeground(lipgloss.Color("#ff4884")).
 				Padding(0, 1).
 				Foreground(lipgloss.Color("#000000")).
@@ -58,8 +58,8 @@ type dateCell struct {
 	blank    bool
 }
 
-func (d *dateCell) Select(baba bool) {
-	(*d).selected = baba
+func (d *dateCell) Select(selected bool) {
+	(*d).selected = selected
 }
 
 func (d dateCell) Render() string {
