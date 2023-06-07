@@ -83,8 +83,6 @@ type dateModel struct {
 	cursorY      int
 	cursorX      int
 	anchor       time.Time
-	// selectedDate time.Time
-	// cursorZ int // which month?
 }
 
 func (m dateModel) FindIndex(fn Predicate[dateCell]) [][]int {
@@ -164,9 +162,6 @@ func (d *dateModel) wrapNav(key string) {
 
 		logPos(*d)
 	}
-	// d.internalGrid[d.cursorY][d.cursorX].selected = true
-	// for d.internalGrid[d.cursorY][d.cursorX].blank {
-	// }
 }
 
 func (m dateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -179,7 +174,6 @@ func (m dateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "up", "down":
 			m.wrapNav(msg.String())
 		case tea.KeyLeft.String(), tea.KeyRight.String(), "left", "right":
-			// m.internalGrid[m.cursorY][m.cursorX].selected = false
 			m.wrapNav(msg.String())
 		case tea.KeyPgDown.String():
 			addo := m.anchor.AddDate(0, 1, 0)
@@ -200,7 +194,6 @@ func (m dateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	inGrid, _, _ := makeMatrix(m.internalGrid[m.cursorY][m.cursorX].date, m.cursorY, m.cursorX)
 	m.internalGrid = inGrid
-	// log.Printf("current index: [%d][%d]", m.cursorY, m.cursorX)
 	// m.selectedDate = m.internalGrid[m.cursorY][m.cursorX].date
 	return m, nil
 }
@@ -217,7 +210,6 @@ func (m dateModel) View() string {
 
 	s += lipgloss.JoinVertical(lipgloss.Center, axisY...)
 	return s
-	// return ""
 }
 
 func (d dateModel) renderWeek(index int) string {
@@ -264,9 +256,6 @@ func makeMatrix(sel time.Time, ya int, xa int) ([][]dateCell, int, int) {
 	// _, curWeek := time.Now().ISOWeek()
 	// thisWeek := isoweek.StartTime(date.Year(), curWeek, time.Local)
 	myDay := firstWeek
-	// for loopVar.Day() > startOfMonth.Day() {
-	// 	loopVar.AddDate(0, 0, 1)
-	// }
 
 	var intY int
 	var intX int
