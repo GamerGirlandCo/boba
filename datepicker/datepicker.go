@@ -106,7 +106,6 @@ func (d *dateModel) wrapNav(key string) {
 	prevo := d.internalGrid[blah[0]][blah[1]]
 	switch key {
 	case "left":
-		// skipBlank(d, &d.cursorY, &d.cursorX, -1)
 		logPos(*d)
 		(*d).cursorX--
 		logPos(*d)
@@ -122,13 +121,12 @@ func (d *dateModel) wrapNav(key string) {
 			(*d).updateAnchor((cal.MonthStart((*d).anchor.AddDate(0, 0, -1))), diffo)
 		}
 	case "right":
-		// skipBlank(d, &d.cursorY, &d.cursorX, 1)
 		logPos(*d)
 		(*d).cursorX++
 		logPos(*d)
 		if (*d).cursorX > 6 {
 			(*d).cursorX = 0
-			if /* || */ (*d).cursorY < 6-1 {
+			if (*d).cursorY < 6-1 {
 				(*d).cursorY++
 			}
 		}
