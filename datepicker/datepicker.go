@@ -62,7 +62,7 @@ type dateCell struct {
 	blank    bool
 }
 
-func (d *dateCell) Select(selected bool) {
+func (d *dateCell) toggle(selected bool) {
 	(*d).selected = selected
 }
 
