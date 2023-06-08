@@ -2,6 +2,7 @@ package datepicker
 
 import (
 	"log"
+	"math"
 	"os"
 	"strconv"
 
@@ -257,6 +258,42 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.updateAnchor((cal.MonthStart(m.anchor.AddDate(0, 0, 1))), diffo)
 			}
 		}
+	case tea.MouseMsg:
+		switch msg.Type {
+		case tea.MouseLeft:
+			celWidth := lipgloss.Width(m.internalGrid[m.cursorY][m.cursorX].Render())
+			celHeight := lipgloss.Height(m.internalGrid[m.cursorY][m.cursorX].Render())
+			wo, _, _ := term.GetSize(int(os.Stdout.Fd()))
+			calWidth := int(wo / 2) /* */
+			calHeight := celHeight * len(m.internalGrid)
+			_, hr, _ := m.calendar()
+			hOffset := calHeight - hr + 1
+			wOffset := int(calWidth-(celWidth*len(m.internalGrid[0]))) - (celWidth / 2)
+			// hOffset := ho - calHeight - 1
+			// 13...18
+			// 19 ... 24
+			// celWidth * (nX + nX) - 1
+			nX := int(math.Max((float64(msg.X-wOffset)+2), 0) / float64(celWidth) /* + float64(celWidth / 2) */)
+			nY := int(math.Max(float64(msg.Y-2)/float64(celHeight) - 3, 0))
+			// nX = int((float64(nX) / celWidth))
+			bounds := [][]int{
+				{
+					int((celWidth*nX)+wOffset-celWidth) - 1,
+					(int(celWidth) * (nX + 1)) - 1 + wOffset + int(celWidth) - 4,
+				},
+				{
+					((nY * celHeight) + hOffset - celHeight),
+					((nY + 1) * celHeight) /* - hOffset */ + (celHeight * 2) + 4,
+				},
+			}
+			log.Println(bounds)
+			log.Printf("mouse! [%d][%d]", msg.X, msg.Y)
+			log.Printf("\nnm [%d][%d]", nX, nY)
+			if (msg.X >= (bounds[0][0]) && msg.X <= bounds[0][1]) && (msg.Y >= bounds[1][0] && msg.Y <= bounds[1][1]) {
+				m.cursorX = int(math.Min(float64(nX), 6))
+				m.cursorY = int(math.Min(float64(nY), 5))
+			}
+		}
 	}
 	inGrid, _, _ := makeMatrix(m.internalGrid[m.cursorY][m.cursorX].date, m.cursorY, m.cursorX)
 	m.internalGrid = inGrid
@@ -264,11 +301,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	return lipgloss.JoinHorizontal(0.33, m.calendar(), m.help.View(m.keys))
+	cal, _, _ := m.calendar()
+	return lipgloss.JoinHorizontal(0.33, cal, m.help.View(m.keys))
 }
 
-func (m Model) calendar() string {
+func (m Model) calendar() (string, int, int) {
 	s := ""
+	otherRet := 0
+	otherOtherRet := ""
 	axisY := make([]string, 0)
 	wo, _, _ := term.GetSize(int(os.Stdout.Fd()))
 	axisY = append(axisY, monthStyle.Render(lipgloss.PlaceHorizontal(int(wo/2), lipgloss.Center, m.internalGrid[0][6].date.Format("January 2006"))))
@@ -278,12 +318,16 @@ func (m Model) calendar() string {
 		header = append(header, weekStyle.Render(m.internalGrid[0][i].date.Format("Mon")))
 	}
 	axisY = append(axisY, lipgloss.JoinHorizontal(lipgloss.Center, header...))
+	otherRet = lipgloss.Height(lipgloss.JoinVertical(lipgloss.Center, axisY...))
 	for i := 0; i < len(m.internalGrid); i++ {
 		axisY = append(axisY, m.renderWeek(i))
+		if i == 0 {
+			otherOtherRet = m.renderWeek(i)
+		}
 	}
 
 	s += lipgloss.JoinVertical(lipgloss.Center, axisY...)
-	return s
+	return s, otherRet, lipgloss.Width(otherOtherRet)
 }
 
 func (m Model) renderWeek(index int) string {

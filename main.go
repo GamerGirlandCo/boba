@@ -20,7 +20,7 @@ func main() {
 	wo, ho, _ := term.GetSize(int(os.Stdout.Fd()))
 	log.Printf("term ix [%dx%d]", wo, ho)
 
-	p := tea.NewProgram(demo.Setup(), tea.WithAltScreen())
+	p := tea.NewProgram(demo.Setup(), tea.WithAltScreen(), tea.WithMouseCellMotion())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
