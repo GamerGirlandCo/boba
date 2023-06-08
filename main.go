@@ -21,8 +21,10 @@ func main() {
 	log.Printf("term ix [%dx%d]", wo, ho)
 
 	p := tea.NewProgram(demo.Setup(), tea.WithAltScreen(), tea.WithMouseCellMotion())
-	if _, err := p.Run(); err != nil {
+	if m, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
+	} else if resi := m.(demo.DemoModel).List.SelectedItem().(demo.DemoItem).Result; resi != "" {
+		fmt.Printf("\n---return value\n---\n [ %s ]", resi)
 	}
 }
