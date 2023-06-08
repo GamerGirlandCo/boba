@@ -9,9 +9,9 @@ import (
 	// "strings"
 	"time"
 
+	util "git.tablet.sh/tablet/boba/utilTypes"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
-	util "git.tablet.sh/tablet/boba/utilTypes"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	cal "github.com/rickar/cal/v2"
@@ -168,7 +168,7 @@ type Model struct {
 	anchor       time.Time
 	keys         keyMap
 	help         help.Model
-	value time.Time
+	value        time.Time
 }
 
 func (m Model) FindIndex(fn util.Predicate[dateCell]) [][]int {
@@ -262,8 +262,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.Choose):
 			m.value = m.internalGrid[m.cursorY][m.cursorX].date
 			return m, func() tea.Msg {
+				Res := m.value.String()
 				return util.GenResultMsg{
-					res: m.value.String(),
+					Res,
 				}
 			}
 		}
@@ -283,7 +284,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// 19 ... 24
 			// celWidth * (nX + nX) - 1
 			nX := int(math.Max((float64(msg.X-wOffset)+2), 0) / float64(celWidth) /* + float64(celWidth / 2) */)
-			nY := int(math.Max(float64(msg.Y-2)/float64(celHeight) - 3, 0))
+			nY := int(math.Max(float64(msg.Y-2)/float64(celHeight)-3, 0))
 			// nX = int((float64(nX) / celWidth))
 			bounds := [][]int{
 				{
