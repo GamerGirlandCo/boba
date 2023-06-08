@@ -264,7 +264,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, func() tea.Msg {
 				Res := m.value.String()
 				return util.GenResultMsg{
-					Res,
+					Res: Res,
 				}
 			}
 		}
