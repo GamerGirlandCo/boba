@@ -346,7 +346,7 @@ func makeMatrix(sel time.Time, ya int, xa int) ([][]dateCell, int, int) {
 				intY = ya
 				intX = xa
 			} else if ya == y && xa == x {
-				log.Printf("x and y: [%d][%d]", y, x)
+				// log.Printf("x and y: [%d][%d]", y, x)
 				intY = x
 				intX = y
 				selBool = true
