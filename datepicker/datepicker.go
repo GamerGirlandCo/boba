@@ -53,9 +53,14 @@ var (
 			Padding(1, 3).
 			Align(lipgloss.Center)
 	weekStyle = lipgloss.NewStyle().
+			Border(lipgloss.NormalBorder()).
+			BorderTop(false).
+			BorderBottom(true).
+			BorderLeft(false).
+			BorderRight(false).
 			Foreground(lipgloss.Color("#baaec4")).
 			Align(lipgloss.Center).
-			Padding(0, 1, 1, 2)
+			Padding(0, 1, 0, 2)
 )
 
 type keyMap struct {
@@ -68,8 +73,8 @@ type keyMap struct {
 	StartOfWeek key.Binding
 	EndOfWeek   key.Binding
 	Help        key.Binding
-	Choose       key.Binding
-	Quit key.Binding
+	Choose      key.Binding
+	Quit        key.Binding
 }
 
 func (k keyMap) ShortHelp() []key.Binding {
@@ -159,8 +164,8 @@ type Model struct {
 	cursorY      int
 	cursorX      int
 	anchor       time.Time
-	keys keyMap
-	help help.Model
+	keys         keyMap
+	help         help.Model
 }
 
 func (m Model) FindIndex(fn Predicate[dateCell]) [][]int {
@@ -397,8 +402,8 @@ func Initialize() Model {
 		cursorX:      x,
 		anchor:       startOfMonth,
 		loaded:       true,
-		help: hell,
-		keys: keys,
+		help:         hell,
+		keys:         keys,
 	}
 	return meep
 }
