@@ -11,6 +11,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
+	util "git.tablet.sh/tablet/boba/utilTypes"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	cal "github.com/rickar/cal/v2"
@@ -167,9 +168,10 @@ type Model struct {
 	anchor       time.Time
 	keys         keyMap
 	help         help.Model
+	value time.Time
 }
 
-func (m Model) FindIndex(fn Predicate[dateCell]) [][]int {
+func (m Model) FindIndex(fn util.Predicate[dateCell]) [][]int {
 	ret := make([][]int, 0)
 	for x := 0; x < len(m.internalGrid)-1; x++ {
 		for y := 0; y < len(m.internalGrid[x])-1; y++ {
@@ -256,6 +258,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			diffo := m.internalGrid[m.cursorY][m.cursorX].date
 			if diffo.Month() > prevo.date.Month() {
 				m.updateAnchor((cal.MonthStart(m.anchor.AddDate(0, 0, 1))), diffo)
+			}
+		case key.Matches(msg, m.keys.Choose):
+			m.value = m.internalGrid[m.cursorY][m.cursorX].date
+			return m, func() tea.Msg {
+				return util.GenResultMsg{
+					res: m.value.String(),
+				}
 			}
 		}
 	case tea.MouseMsg:
@@ -348,7 +357,7 @@ func (m *Model) updateAnchor(argo time.Time, now time.Time) {
 }
 
 func (m Model) Value() time.Time {
-	return m.internalGrid[m.cursorY][m.cursorX].date
+	return m.value
 }
 
 func getDefaultMatrix(cur time.Time) (int, int) {
