@@ -26,8 +26,8 @@ func main() {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
 	}
-	if resi := m.(demo.DemoModel).List.SelectedItem().(demo.DemoItem).Result; resi != "" {
-		tea.Printf("\n---return value\n---\n [ %s ]", resi)
+	if resi := m.(demo.DemoModel).List.SelectedItem().(demo.DemoItem).Result; *resi != "" {
+		fmt.Printf("\n---\nreturn value\n---\n[ %s ]", *resi)
 		os.Exit(0)
 	}
 }

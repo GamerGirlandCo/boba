@@ -21,7 +21,7 @@ var (
 
 type DemoItem struct {
 	text   string
-	Result string
+	Result *string
 	model  *ModelContainer
 }
 
@@ -92,7 +92,9 @@ func (m DemoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			anon()
 		}
 	case util.GenResultMsg[string]:
-		tea.Printf("\n---return value\n---\n [ %s ]", m.List.SelectedItem().(DemoItem).Result)
+		tea.Printf("\n---return value\n---\n [ %s ]", msg.Res)
+		var i DemoItem = m.List.SelectedItem().(DemoItem)
+		*i.Result = msg.Res
 		return m, tea.Quit
 	}
 	if !m.demoStarted {
@@ -103,10 +105,15 @@ func (m DemoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m DemoModel) View() string {
+	result := ""
+	if r := m.List.SelectedItem().(DemoItem).Result; *r != "" {
+		result = *r
+	}
 	if m.demoStarted {
-		return (*(*m.List.SelectedItem().(DemoItem).model).value).View()
-	} else if m.choice != "" {
-		return confirmTextStyle.Render(fmt.Sprintf("demoing bubble : %s", m.choice))
+		return confirmTextStyle.Render(fmt.Sprintf("demoing bubble : %s", m.choice)) + 
+		"\n\n" + 
+		(*(*m.List.SelectedItem().(DemoItem).model).value).View() +
+		"\n\n" + result
 	} else {
 		return "\n" + m.List.View()
 	}
@@ -114,13 +121,14 @@ func (m DemoModel) View() string {
 
 func Setup() DemoModel {
 	var modi tea.Model = datepicker.Initialize()
+	var minit string = "";
 	items := []list.Item{
 		DemoItem{
 			text: "Date picker",
 			model: &ModelContainer{
 				value: &modi,
 			},
-			Result: "",
+			Result: &minit,
 		},
 	}
 	l := list.New(items, itemDeleg{}, 20, 15)
