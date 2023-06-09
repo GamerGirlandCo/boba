@@ -263,7 +263,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.value = m.internalGrid[m.cursorY][m.cursorX].date
 			return m, func() tea.Msg {
 				Res := m.value.String()
-				return util.GenResultMsg{
+				return util.GenResultMsg[string] {
 					Res: Res,
 				}
 			}
@@ -307,7 +307,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	inGrid, _, _ := makeMatrix(m.internalGrid[m.cursorY][m.cursorX].date, m.cursorY, m.cursorX)
 	m.internalGrid = inGrid
-	return m, nil
+	return m, func() tea.Msg {
+		return struct{}{}
+	}
 }
 
 func (m Model) View() string {
