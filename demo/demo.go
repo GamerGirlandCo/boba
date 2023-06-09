@@ -22,10 +22,10 @@ var (
 type DemoItem struct {
 	text   string
 	Result string
-	model  *DemoSubModel
+	model  *ModelContainer
 }
 
-type DemoSubModel struct {
+type ModelContainer struct {
 	value *tea.Model
 }
 
@@ -68,7 +68,7 @@ func (m DemoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var anon func() = func() {
 		i, _ := m.List.SelectedItem().(DemoItem)
 		nope, cmd := (*(*i.model).value).Update(msg)
-		*(m.List.SelectedItem().(DemoItem).model) = DemoSubModel{
+		*(m.List.SelectedItem().(DemoItem).model) = ModelContainer{
 			value: &nope,
 		}
 		cmds = append(cmds, cmd)
@@ -115,7 +115,7 @@ func Setup() DemoModel {
 	items := []list.Item{
 		DemoItem{
 			text: "Date picker",
-			model: &DemoSubModel{
+			model: &ModelContainer{
 				value: &modi,
 			},
 			Result: "",
