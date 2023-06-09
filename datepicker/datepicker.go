@@ -263,7 +263,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.value = m.internalGrid[m.cursorY][m.cursorX].date
 			return m, func() tea.Msg {
 				Res := m.value.String()
-				return util.GenResultMsg[string] {
+				return util.GenResultMsg[string]{
 					Res: Res,
 				}
 			}

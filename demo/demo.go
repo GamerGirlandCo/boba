@@ -110,10 +110,10 @@ func (m DemoModel) View() string {
 		result = *r
 	}
 	if m.demoStarted {
-		return confirmTextStyle.Render(fmt.Sprintf("demoing bubble : %s", m.choice)) + 
-		"\n\n" + 
-		(*(*m.List.SelectedItem().(DemoItem).model).value).View() +
-		"\n\n" + result
+		return confirmTextStyle.Render(fmt.Sprintf("demoing bubble : %s", m.choice)) +
+			"\n\n" +
+			(*(*m.List.SelectedItem().(DemoItem).model).value).View() +
+			"\n\n" + result
 	} else {
 		return "\n" + m.List.View()
 	}
@@ -121,7 +121,7 @@ func (m DemoModel) View() string {
 
 func Setup() DemoModel {
 	var modi tea.Model = datepicker.Initialize()
-	var minit string = "";
+	var minit string = ""
 	items := []list.Item{
 		DemoItem{
 			text: "Date picker",

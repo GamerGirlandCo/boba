@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+
 	"git.tablet.sh/tablet/boba/demo"
 	tea "github.com/charmbracelet/bubbletea"
 	"golang.org/x/term"
@@ -20,8 +21,8 @@ func main() {
 	wo, ho, _ := term.GetSize(int(os.Stdout.Fd()))
 	log.Printf("term is [%dx%d]", wo, ho)
 
-	p := tea.NewProgram(demo.Setup(),  tea.WithMouseCellMotion())
-	m, err := p.Run(); 
+	p := tea.NewProgram(demo.Setup(), tea.WithMouseCellMotion())
+	m, err := p.Run()
 	if err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
