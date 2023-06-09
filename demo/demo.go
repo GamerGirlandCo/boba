@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"git.tablet.sh/tablet/boba/datepicker"
+	util "git.tablet.sh/tablet/boba/utilTypes"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	util "git.tablet.sh/tablet/boba/utilTypes"
 )
 
 var (
@@ -20,14 +20,17 @@ var (
 )
 
 type DemoItem struct {
-	text  string
-	model tea.Model
+	text   string
 	Result string
+	model  *DemoSubModel
+	Run    func(DemoItem, tea.Msg, chan tea.Cmd)
+}
+
+type DemoSubModel struct {
+	value *tea.Model
 }
 
 func (i DemoItem) FilterValue() string { return i.text }
-
-type runMsg struct{}
 
 type itemDeleg struct{}
 
@@ -51,9 +54,9 @@ func (d itemDeleg) Render(w io.Writer, m list.Model, index int, listItem list.It
 }
 
 type DemoModel struct {
-	List     list.Model
-	choice   string
-	quitting bool
+	List        list.Model
+	choice      string
+	demoStarted bool
 }
 
 func (m DemoModel) Init() tea.Cmd {
@@ -61,7 +64,17 @@ func (m DemoModel) Init() tea.Cmd {
 }
 
 func (m DemoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
 	var cmd tea.Cmd
+	var anon func() = func() {
+		i, _ := m.List.SelectedItem().(DemoItem)
+		nope, cmd := (*(*i.model).value).Update(msg)
+		helpme := &nope
+		*(m.List.SelectedItem().(DemoItem).model) = DemoSubModel{
+			value: helpme,
+		}
+		cmds = append(cmds, cmd)
+	}
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.List.SetWidth(msg.Width)
@@ -72,27 +85,27 @@ func (m DemoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 		case "enter":
-			m.quitting = true
-			i, ok := m.List.SelectedItem().(DemoItem)
-			if ok {
-				m.choice = i.text
-				return i.model, nil
+			if !m.demoStarted {
+				m.demoStarted = true
 			} else {
-				return m, tea.Quit
+				anon()
 			}
+		default:
+			anon()
 		}
-	case runMsg:
-		return m, tea.ClearScreen
-	case util.GenResultMsg:
+	case util.GenResultMsg[any]:
+		tea.Printf("\n---return value\n---\n [ %s ]", m.List.SelectedItem().(DemoItem).Result)
 		return m, tea.Quit
 	}
-
 	m.List, cmd = m.List.Update(msg)
-	return m, cmd
+	cmds = append(cmds, cmd)
+	return m, tea.Batch(cmds...)
 }
 
 func (m DemoModel) View() string {
-	if m.choice != "" {
+	if m.demoStarted {
+		return (*(*m.List.SelectedItem().(DemoItem).model).value).View()
+	} else if m.choice != "" {
 		return confirmTextStyle.Render(fmt.Sprintf("demoing bubble : %s", m.choice))
 	} else {
 		return "\n" + m.List.View()
@@ -100,11 +113,19 @@ func (m DemoModel) View() string {
 }
 
 func Setup() DemoModel {
+	var modi tea.Model = datepicker.Initialize()
 	items := []list.Item{
 		DemoItem{
-			text:  "Date picker",
-			model: datepicker.Initialize(),
+			text: "Date picker",
+			model: &DemoSubModel{
+				value: &modi,
+			},
 			Result: "",
+			Run: func(do DemoItem, m tea.Msg, c chan tea.Cmd) {
+				domod := (*(*do.model).value).(datepicker.Model)
+				_, a := domod.Update(m)
+				c <- a
+			},
 		},
 	}
 	l := list.New(items, itemDeleg{}, 20, 15)
@@ -113,7 +134,7 @@ func Setup() DemoModel {
 	l.SetFilteringEnabled(false)
 	l.Styles.Title = titleStyle
 
-	m := DemoModel{List: l}
+	m := DemoModel{List: l, demoStarted: false}
 
 	return m
 }

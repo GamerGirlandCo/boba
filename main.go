@@ -18,13 +18,15 @@ func main() {
 	}
 	defer f.Close()
 	wo, ho, _ := term.GetSize(int(os.Stdout.Fd()))
-	log.Printf("term ix [%dx%d]", wo, ho)
+	log.Printf("term is [%dx%d]", wo, ho)
 
-	p := tea.NewProgram(demo.Setup(), tea.WithAltScreen(), tea.WithMouseCellMotion())
-	if m, err := p.Run(); err != nil {
+	p := tea.NewProgram(demo.Setup(), /*  tea.WithMouseCellMotion() */)
+	m, err := p.Run(); 
+	if err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
-	} else if resi := m.(demo.DemoModel).List.SelectedItem().(demo.DemoItem).Result; resi != "" {
+	}
+	if resi := m.(demo.DemoModel).List.SelectedItem().(demo.DemoItem).Result; resi != "" {
 		fmt.Printf("\n---return value\n---\n [ %s ]", resi)
 	}
 }
