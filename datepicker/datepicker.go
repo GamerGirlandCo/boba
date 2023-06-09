@@ -108,7 +108,7 @@ var keys = keyMap{
 	),
 	PrevMonth: key.NewBinding(
 		key.WithKeys(tea.KeyPgUp.String(), "shift+up"),
-		key.WithHelp("PgUp/Shift+↑", "go to next month"),
+		key.WithHelp("PgUp/Shift+↑", "go to prev month"),
 	),
 	NextMonth: key.NewBinding(
 		key.WithKeys(tea.KeyPgDown.String(), "shift+down"),
