@@ -28,5 +28,6 @@ func main() {
 	}
 	if resi := m.(demo.DemoModel).List.SelectedItem().(demo.DemoItem).Result; resi != "" {
 		fmt.Printf("\n---return value\n---\n [ %s ]", resi)
+		os.Exit(0)
 	}
 }

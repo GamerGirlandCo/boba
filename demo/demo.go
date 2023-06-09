@@ -91,7 +91,7 @@ func (m DemoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		default:
 			anon()
 		}
-	case util.GenResultMsg[any]:
+	case util.GenResultMsg[string]:
 		tea.Printf("\n---return value\n---\n [ %s ]", m.List.SelectedItem().(DemoItem).Result)
 		return m, tea.Quit
 	}
