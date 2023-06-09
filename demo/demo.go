@@ -67,10 +67,9 @@ func (m DemoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var anon func() = func() {
 		i, _ := m.List.SelectedItem().(DemoItem)
-		nope, cmd := (*(*i.model).value).Update(msg)
-		helpme := &nope
+		nope, cmd := (*(*i.model).value).Update(msg)e
 		*(m.List.SelectedItem().(DemoItem).model) = DemoSubModel{
-			value: helpme,
+			value: &nope,
 		}
 		cmds = append(cmds, cmd)
 	}
