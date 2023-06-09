@@ -23,7 +23,6 @@ type DemoItem struct {
 	text   string
 	Result string
 	model  *DemoSubModel
-	Run    func(DemoItem, tea.Msg, chan tea.Cmd)
 }
 
 type DemoSubModel struct {
@@ -121,11 +120,6 @@ func Setup() DemoModel {
 				value: &modi,
 			},
 			Result: "",
-			Run: func(do DemoItem, m tea.Msg, c chan tea.Cmd) {
-				domod := (*(*do.model).value).(datepicker.Model)
-				_, a := domod.Update(m)
-				c <- a
-			},
 		},
 	}
 	l := list.New(items, itemDeleg{}, 20, 15)
