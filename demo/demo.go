@@ -95,8 +95,10 @@ func (m DemoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		tea.Printf("\n---return value\n---\n [ %s ]", m.List.SelectedItem().(DemoItem).Result)
 		return m, tea.Quit
 	}
-	m.List, cmd = m.List.Update(msg)
-	cmds = append(cmds, cmd)
+	if !m.demoStarted {
+		m.List, cmd = m.List.Update(msg)
+		cmds = append(cmds, cmd)
+	}
 	return m, tea.Batch(cmds...)
 }
 
