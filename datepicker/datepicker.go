@@ -132,7 +132,7 @@ var keys = keyMap{
 	),
 	Quit: key.NewBinding(
 		key.WithKeys("ctrl+c", "q"),
-		key.WithHelp("Ctrl+c/q", "quit program"),
+		key.WithHelp("Ctrl+c/q", "cancel"),
 	),
 }
 
@@ -196,8 +196,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var blah []int = []int{m.cursorY, m.cursorX}
 		prevo := m.internalGrid[blah[0]][blah[1]]
 		switch {
-		case key.Matches(msg, m.keys.Quit):
-			return m, tea.Quit
+		// case key.Matches(msg, m.keys.Quit):
+		// 	return m, tea.Quit
 		case key.Matches(msg, m.keys.Down):
 			m.cursorY++
 			if m.cursorY > 6-1 {
@@ -279,13 +279,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			_, hr, _ := m.calendar()
 			hOffset := calHeight - hr + 1
 			wOffset := int(calWidth-(celWidth*len(m.internalGrid[0]))) - (celWidth / 2)
-			// hOffset := ho - calHeight - 1
-			// 13...18
-			// 19 ... 24
-			// celWidth * (nX + nX) - 1
-			nX := int(math.Max((float64(msg.X-wOffset)+2), 0) / float64(celWidth) /* + float64(celWidth / 2) */)
+			nX := int(math.Max((float64(msg.X-wOffset)+2), 0) / float64(celWidth))
 			nY := int(math.Max(float64(msg.Y-2)/float64(celHeight)-3, 0))
-			// nX = int((float64(nX) / celWidth))
 			bounds := [][]int{
 				{
 					int((celWidth*nX)+wOffset-celWidth) - 1,
@@ -293,7 +288,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				},
 				{
 					((nY * celHeight) + hOffset - celHeight),
-					((nY + 1) * celHeight) /* - hOffset */ + (celHeight * 2) + 4,
+					((nY + 1) * celHeight) + (celHeight * 2) + 4,
 				},
 			}
 			log.Println(bounds)
@@ -367,13 +362,7 @@ func getDefaultMatrix(cur time.Time) (int, int) {
 	som := cal.MonthStart(cur)
 	_, fd := isoweek.FromDate(som.Year(), som.Month(), som.Day())
 	fw := isoweek.StartTime(som.Year(), fd, time.Local).AddDate(0, 0, -1)
-
-	// eom := cal.MonthEnd(cur)
-	// _, ld := isoweek.FromDate(eom.Year(), eom.Month(), eom.Day())
-	// lw := isoweek.StartTime(eom.Year(), ld, time.Local).AddDate(0, 0, 6)
-
 	diffB := cur.Sub(fw)
-	// diffA := lw.Sub(cur)
 
 	modulo := (int(diffB.Hours()) / 24) % 7
 	div := int((int(diffB.Hours()) / 24) / 7)
@@ -386,8 +375,6 @@ func makeMatrix(sel time.Time, ya int, xa int) ([][]dateCell, int, int) {
 	startOfMonth := cal.MonthStart(sel)
 	_, week := startOfMonth.ISOWeek()
 	firstWeek := isoweek.StartTime(startOfMonth.Year(), week, time.Local).AddDate(0, 0, -1)
-	// _, curWeek := time.Now().ISOWeek()
-	// thisWeek := isoweek.StartTime(date.Year(), curWeek, time.Local)
 	myDay := firstWeek
 
 	var intY int
@@ -402,15 +389,10 @@ func makeMatrix(sel time.Time, ya int, xa int) ([][]dateCell, int, int) {
 				intY = ya
 				intX = xa
 			} else if ya == y && xa == x {
-				// log.Printf("x and y: [%d][%d]", y, x)
 				intY = x
 				intX = y
 				selBool = true
-			} else if /* {
-				log.Print("ya and xa == y and x")
-				log.Printf("x and y: [%d][%d]", y, x)
-				selBool = true
-			}  else if */myDay.Month() < sel.Month() || myDay.Month() > sel.Month() {
+			} else if myDay.Month() < sel.Month() || myDay.Month() > sel.Month() {
 				blankBool = true
 				selBool = false
 			}
