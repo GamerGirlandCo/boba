@@ -6,7 +6,8 @@ import (
 	"strings"
 
 	"git.tablet.sh/tablet/boba/datepicker"
-	util "git.tablet.sh/tablet/boba/utilTypes"
+	"git.tablet.sh/tablet/boba/timepicker"
+	util "git.tablet.sh/tablet/boba/types"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -85,6 +86,7 @@ func (m DemoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if !m.demoStarted {
 				m.demoStarted = true
+				m.choice = m.List.SelectedItem().(DemoItem).text
 			} else {
 				anon()
 			}
@@ -120,19 +122,32 @@ func (m DemoModel) View() string {
 }
 
 func Setup() DemoModel {
-	var modi tea.Model = datepicker.Initialize()
-	var minit string = ""
-	items := []list.Item{
-		DemoItem{
-			text: "Date picker",
+
+	titles := []string{
+		"Date picker",
+		"Time picker",
+	}
+	items := make([]list.Item, len(titles))
+	for i := range items {
+		var modi tea.Model
+		switch i {
+		case 0:
+			modi = datepicker.Initialize()
+		case 1:
+			modi = timepicker.Initialize()
+		}
+		var minit string = ""
+		items[i] = DemoItem{
+			text: titles[i],
 			model: &ModelContainer{
 				value: &modi,
 			},
 			Result: &minit,
-		},
+		}
 	}
+
 	l := list.New(items, itemDeleg{}, 20, 15)
-	l.Title = "Select a Boba(TM) component to demo."
+	l.Title = "🌸 Select a Boba🧋 component to demo."
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 	l.Styles.Title = titleStyle
