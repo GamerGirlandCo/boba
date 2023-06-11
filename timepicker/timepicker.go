@@ -131,9 +131,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		thirdField = 2
 	}
 
-		wo, _, _ := term.GetSize(int(os.Stdout.Fd()))
-		m.width = wo
-		tea.Println("wja ", m.width)
+	wo, _, _ := term.GetSize(int(os.Stdout.Fd()))
+	m.width = wo
+	tea.Println("wja ", m.width)
 	switch msg := msg.(type) {
 	case tea.MouseMsg:
 		return m, nil
@@ -198,9 +198,9 @@ func (m Model) View() string {
 	log.Print("hi", m.width)
 	return lipgloss.PlaceHorizontal(int(m.width), lipgloss.Center, lipgloss.JoinVertical(
 		lipgloss.Center,
-			lipgloss.JoinHorizontal(lipgloss.Center, final...),
-			m.help.View(m.keys),
-		),
+		lipgloss.JoinHorizontal(lipgloss.Center, final...),
+		m.help.View(m.keys),
+	),
 	)
 
 }
@@ -215,7 +215,7 @@ func (m *Model) incOrDec(dir, amt int) {
 	case 2:
 		multiplier = time.Second
 	}
-	m.value = m.value.Add(multiplier * time.Duration(dir * amt))
+	m.value = m.value.Add(multiplier * time.Duration(dir*amt))
 }
 
 func genTicks(t int, m Model) []ticky {
@@ -251,10 +251,10 @@ func genTicks(t int, m Model) []ticky {
 		// fmt.Println(inten)
 		ihatethis := which + i + 1
 		inter := minMaxTicks(0, wrapArg,
-				ihatethis,
-				-1, true, true)
+			ihatethis,
+			-1, true, true)
 		ret[j] = ticky{
-			val: inter,
+			val:   inter,
 			color: grad[inten],
 		}
 		j++
@@ -284,17 +284,15 @@ func minMaxTicks(min, max, cur, dir int, wrapAround bool, inclusive bool) int {
 		ret++
 	}
 	// ret += dir
-	
-		if ret >= max {
-			ret = min + (ret - max)
-		}
-		if ret < min {
-			ret = max + ret
-		}
+
+	if ret >= max {
+		ret = min + (ret - max)
+	}
+	if ret < min {
+		ret = max + ret
+	}
 	return ret
 }
-
-
 
 func minMax(max, cur, dir int) int {
 	cur += dir
@@ -305,7 +303,6 @@ func minMax(max, cur, dir int) int {
 	}
 	return cur
 }
-
 
 func Initialize(sekunti bool) Model {
 	helpo := help.New()
