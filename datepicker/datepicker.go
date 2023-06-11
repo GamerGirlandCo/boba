@@ -9,7 +9,7 @@ import (
 	// "strings"
 	"time"
 
-	util "git.tablet.sh/tablet/boba/utilTypes"
+	util "git.tablet.sh/tablet/boba/types"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -312,6 +312,12 @@ func (m Model) View() string {
 	return lipgloss.JoinHorizontal(0.33, cal, m.help.View(m.keys))
 }
 
+
+// function to render out a calendar from the Mode 
+// @receiver m 
+// @return string 
+// @return int 
+// @return int 
 func (m Model) calendar() (string, int, int) {
 	s := ""
 	otherRet := 0
