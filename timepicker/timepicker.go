@@ -3,6 +3,7 @@ package timepicker
 import (
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	util "git.tablet.sh/tablet/boba/types"
@@ -11,6 +12,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lucasb-eyer/go-colorful"
+	"golang.org/x/term"
 )
 
 const (
@@ -129,9 +131,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		thirdField = 2
 	}
 
+		wo, _, _ := term.GetSize(int(os.Stdout.Fd()))
+		m.width = wo
+		tea.Println("wja ", m.width)
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
 	case tea.MouseMsg:
 		return m, nil
 	case tea.KeyMsg:
@@ -176,7 +179,6 @@ func (m Model) View() string {
 			} else {
 				sty = m.Styles.Value.Copy().
 					Foreground(lipgloss.Color(tickers[b].color))
-				/* .Width(int(m.width / 3)) */
 			}
 
 			str[b] = sty.Render(fmt.Sprintf("%02d", tickers[b].val))
@@ -193,9 +195,9 @@ func (m Model) View() string {
 			}
 		}
 	}
-
-	return lipgloss.PlaceHorizontal(int(m.width / 2), lipgloss.Center,
-		lipgloss.JoinVertical(lipgloss.Center,
+	log.Print("hi", m.width)
+	return lipgloss.PlaceHorizontal(int(m.width), lipgloss.Center, lipgloss.JoinVertical(
+		lipgloss.Center,
 			lipgloss.JoinHorizontal(lipgloss.Center, final...),
 			m.help.View(m.keys),
 		),
@@ -239,14 +241,11 @@ func genTicks(t int, m Model) []ticky {
 	j := 0
 	grad := genGradient()
 	for i := -3; i < 4; i++ {
-		// var sign int = -1
-		// sub := 0
 		var inten int
 		if i < 0 {
 			inten = 3 + i
 		} else {
-			// sub = 1
-			inten = i
+			inten = (7 - i - 3) - 1
 		}
 
 		// fmt.Println(inten)
@@ -257,7 +256,6 @@ func genTicks(t int, m Model) []ticky {
 		ret[j] = ticky{
 			val: inter,
 			color: grad[inten],
-			// intensity: inten,
 		}
 		j++
 	}
