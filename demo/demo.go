@@ -79,6 +79,8 @@ func (m DemoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.List.SetWidth(msg.Width)
 		return m, nil
 
+	case tea.MouseMsg:
+		anon()
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c", "q":
@@ -126,6 +128,7 @@ func Setup() DemoModel {
 	titles := []string{
 		"Date picker",
 		"Time picker",
+		"Time picker (with seconds)",
 	}
 	items := make([]list.Item, len(titles))
 	for i := range items {
@@ -134,7 +137,9 @@ func Setup() DemoModel {
 		case 0:
 			modi = datepicker.Initialize()
 		case 1:
-			modi = timepicker.Initialize()
+			modi = timepicker.Initialize(false)
+		case 2:
+			modi = timepicker.Initialize(true)
 		}
 		var minit string = ""
 		items[i] = DemoItem{
