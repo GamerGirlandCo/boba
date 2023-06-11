@@ -77,7 +77,7 @@ func (m DemoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.List.SetWidth(msg.Width)
-		return m, nil
+		anon()
 
 	case tea.MouseMsg:
 		anon()
@@ -114,10 +114,11 @@ func (m DemoModel) View() string {
 		result = *r
 	}
 	if m.demoStarted {
-		return confirmTextStyle.Render(fmt.Sprintf("demoing bubble : %s", m.choice)) +
-			"\n\n" +
-			(*(*m.List.SelectedItem().(DemoItem).model).value).View() +
-			"\n\n" + result
+		return lipgloss.JoinVertical(lipgloss.Center, 
+			confirmTextStyle.Render(fmt.Sprintf("demoing bubble : %s", m.choice)),
+			(*(*m.List.SelectedItem().(DemoItem).model).value).View(),
+			result,
+			)
 	} else {
 		return "\n" + m.List.View()
 	}
