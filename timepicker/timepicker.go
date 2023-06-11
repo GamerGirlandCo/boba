@@ -3,12 +3,10 @@ package timepicker
 import (
 	"fmt"
 	"log"
-
-	// "math"
-
-	// "math"
 	"time"
 
+	util "git.tablet.sh/tablet/boba/types"
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -58,6 +56,17 @@ type keyMap struct {
 	Last      key.Binding
 }
 
+func (k keyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.TickUp, k.TickDown, k.PrevField, k.NextField, k.Choose}
+}
+
+func (k keyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.TickUp, k.TickDown, k.PrevField, k.NextField},
+		{k.First, k.Last, k.Choose},
+	}
+}
+
 var keys = keyMap{
 	TickUp: key.NewBinding(
 		key.WithKeys("up"),
@@ -73,6 +82,18 @@ var keys = keyMap{
 	NextField: key.NewBinding(
 		key.WithKeys(tea.KeyTab.String()),
 		key.WithHelp("tab", "next field"),
+	),
+	First: key.NewBinding(
+		key.WithKeys(tea.KeyHome.String(), tea.KeyShiftUp.String()),
+		key.WithHelp("home/shift+↑", "first value"),
+	),
+	Last: key.NewBinding(
+		key.WithKeys(tea.KeyEnd.String(), tea.KeyShiftDown.String()),
+		key.WithHelp("end/shift+↓", "last value"),
+	),
+	Choose: key.NewBinding(
+		key.WithKeys(tea.KeySpace.String(), tea.KeyEnter.String()),
+		key.WithHelp("space/enter", "finalize selection"),
 	),
 }
 
@@ -95,6 +116,7 @@ type Model struct {
 	width    int
 	selected int
 	keys     keyMap
+	help     help.Model
 }
 
 func (m Model) Init() tea.Cmd {
@@ -104,24 +126,34 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	thirdField := 1
 	if m.Seconds {
-		thirdField = 3
+		thirdField = 2
 	}
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
+	case tea.MouseMsg:
+		return m, nil
 	case tea.KeyMsg:
 		switch {
 		// case "q", "ctrl+c":
 		// 	return m, tea.Quit
 		case key.Matches(msg, m.keys.NextField):
-			m.selected = minMax(0, thirdField, m.selected, 1, true, false)
+			m.selected = minMax(thirdField, m.selected, 1)
 		case key.Matches(msg, m.keys.PrevField):
-			m.selected = minMax(0, thirdField, m.selected, -1, true, false)
+			m.selected = minMax(thirdField, m.selected, -1)
 		case key.Matches(msg, m.keys.TickUp):
-			m.incOrDec(-1)
+			m.incOrDec(-1, 1)
 		case key.Matches(msg, m.keys.TickDown):
-			m.incOrDec(1)
+			m.incOrDec(1, 1)
+		case key.Matches(msg, m.keys.Choose):
+			return m, func() tea.Msg {
+				// if twelvhr...
+				result := m.value.Format("15:04:05")
+				return util.GenResultMsg[string]{
+					Res: result,
+				}
+			}
 		}
 	}
 
@@ -162,25 +194,26 @@ func (m Model) View() string {
 		}
 	}
 
-	return lipgloss.PlaceHorizontal(m.width, lipgloss.Center, lipgloss.JoinHorizontal(lipgloss.Center, final...))
+	return lipgloss.PlaceHorizontal(int(m.width / 2), lipgloss.Center,
+		lipgloss.JoinVertical(lipgloss.Center,
+			lipgloss.JoinHorizontal(lipgloss.Center, final...),
+			m.help.View(m.keys),
+		),
+	)
+
 }
 
-func (m *Model) incOrDec(dir int) {
-	base := m.value
-	var sec, min, hr int = base.Second(), base.Minute(), base.Hour()
+func (m *Model) incOrDec(dir, amt int) {
+	var multiplier time.Duration
 	switch m.selected {
 	case 0:
-		hr += dir
+		multiplier = time.Hour
 	case 1:
-		min += dir
+		multiplier = time.Minute
 	case 2:
-		sec += dir
+		multiplier = time.Second
 	}
-	delta := time.Date(base.Year(), base.Month(), base.Day(),
-		hr, min, sec, 0, time.Local,
-	)
-	diff := delta.Sub(base)
-	m.value = m.value.Add(diff)
+	m.value = m.value.Add(multiplier * time.Duration(dir * amt))
 }
 
 func genTicks(t int, m Model) []ticky {
@@ -203,33 +236,37 @@ func genTicks(t int, m Model) []ticky {
 		wrapArg = perMinute
 		which = m.value.Second()
 	}
-	// j := 6
+	j := 0
 	grad := genGradient()
-	for i := 0; i < 7; i++ {
-		var sign int = -1
+	for i := -3; i < 4; i++ {
+		// var sign int = -1
 		// sub := 0
 		var inten int
-		if i < 3 {
-			inten = i
+		if i < 0 {
+			inten = 3 + i
 		} else {
 			// sub = 1
-			inten = 7 - i - 1
+			inten = i
 		}
+
 		// fmt.Println(inten)
-		ret[i] = ticky{
-			val: minMax(0, wrapArg,
-				which+i,
-				sign, true, true),
+		ihatethis := which + i + 1
+		inter := minMaxTicks(0, wrapArg,
+				ihatethis,
+				-1, true, true)
+		ret[j] = ticky{
+			val: inter,
 			color: grad[inten],
 			// intensity: inten,
 		}
+		j++
 	}
 	return ret
 }
 
 func genGradient() []string {
 	ograd := make([]colorful.Color, 4)
-	x0, _ := colorful.Hex("#333333")
+	x0, _ := colorful.Hex("#444444")
 	x1, _ := colorful.Hex("#eeeeee")
 	ret := make([]string, len(ograd))
 	for i := range ograd {
@@ -241,40 +278,43 @@ func genGradient() []string {
 	return ret
 }
 
-func minMax(min, max, cur, dir int, wrapAround bool, inclusive bool) int {
+func minMaxTicks(min, max, cur, dir int, wrapAround bool, inclusive bool) int {
 	ret := cur
-	secondsub := 0
 	if dir < 0 {
 		ret--
 	} else if dir > 0 {
 		ret++
 	}
-	if inclusive {
-		secondsub = 1
-	}
 	// ret += dir
-	if !wrapAround {
-		if ret >= max {
-			ret = max - secondsub
-		}
-		if ret < min {
-			ret = min
-		}
-	} else {
+	
 		if ret >= max {
 			ret = min + (ret - max)
 		}
 		if ret < min {
-			ret = max - secondsub
+			ret = max + ret
 		}
-	}
 	return ret
 }
 
-func Initialize() Model {
+
+
+func minMax(max, cur, dir int) int {
+	cur += dir
+	if cur < 0 {
+		cur = max
+	} else if cur > max {
+		cur = 0
+	}
+	return cur
+}
+
+
+func Initialize(sekunti bool) Model {
+	helpo := help.New()
+	helpo.ShowAll = true
 	m := Model{
 		// TwelveHr: false,
-		Seconds: true,
+		Seconds: sekunti,
 		value:   time.Now(),
 		Styles: Styles{
 			OuterBorder: lipgloss.NewStyle().
@@ -289,6 +329,7 @@ func Initialize() Model {
 		},
 		selected: 0,
 		keys:     keys,
+		help:     helpo,
 	}
 	m.Styles.SelectedOuterBorder = m.Styles.OuterBorder.Copy().
 		Border(defBorder).BorderForeground(lipgloss.Color("#f48fb1"))
