@@ -11,6 +11,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	z "github.com/lrstanley/bubblezone"
 	"github.com/lucasb-eyer/go-colorful"
 	"golang.org/x/term"
 )
@@ -133,10 +134,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	wo, _, _ := term.GetSize(int(os.Stdout.Fd()))
 	m.width = wo
-	tea.Println("wja ", m.width)
+	// tea.Println("wja ", m.width)
 	switch msg := msg.(type) {
 	case tea.MouseMsg:
-		return m, nil
+		switch msg.Type {
+		case tea.MouseLeft:
+			for i := range headers {
+
+				switch {
+				case z.Get(fmt.Sprintf("%s-up", headers[i])).InBounds(msg):
+					m.incOrDec(-1, 1, i)
+				case z.Get(fmt.Sprintf("%s-dn", headers[i])).InBounds(msg):
+					m.incOrDec(1, 1, i)
+				}
+			}
+		case tea.MouseWheelUp:
+			m.incOrDec(-1, 1, m.selected)
+		case tea.MouseWheelDown:
+			m.incOrDec(1, 1, m.selected)
+		}
 	case tea.KeyMsg:
 		switch {
 		// case "q", "ctrl+c":
@@ -146,9 +162,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.PrevField):
 			m.selected = minMax(thirdField, m.selected, -1)
 		case key.Matches(msg, m.keys.TickUp):
-			m.incOrDec(-1, 1)
+			m.incOrDec(-1, 1, m.selected)
 		case key.Matches(msg, m.keys.TickDown):
-			m.incOrDec(1, 1)
+			m.incOrDec(1, 1, m.selected)
 		case key.Matches(msg, m.keys.Choose):
 			return m, func() tea.Msg {
 				// if twelvhr...
@@ -191,7 +207,10 @@ func (m Model) View() string {
 				}
 				final[a] = lipgloss.JoinVertical(
 					lipgloss.Center, headers[a],
-					upArrowWide, bs.Render(jd), downArrowWide)
+					z.Mark(fmt.Sprintf("%s-up", headers[a]), upArrowWide),
+					bs.Render(jd),
+					z.Mark(fmt.Sprintf("%s-dn", headers[a]), downArrowWide),
+				)
 			}
 		}
 	}
@@ -205,9 +224,9 @@ func (m Model) View() string {
 
 }
 
-func (m *Model) incOrDec(dir, amt int) {
+func (m *Model) incOrDec(dir, amt, anotherarg int) {
 	var multiplier time.Duration
-	switch m.selected {
+	switch anotherarg {
 	case 0:
 		multiplier = time.Hour
 	case 1:
@@ -305,6 +324,7 @@ func minMax(max, cur, dir int) int {
 }
 
 func Initialize(sekunti bool) Model {
+	z.NewGlobal()
 	helpo := help.New()
 	helpo.ShowAll = true
 	m := Model{

@@ -1,8 +1,8 @@
 package datepicker
 
 import (
+	"fmt"
 	"log"
-	"math"
 	"os"
 	"strconv"
 
@@ -14,6 +14,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	z "github.com/lrstanley/bubblezone"
 	cal "github.com/rickar/cal/v2"
 	"github.com/snabb/isoweek"
 	"golang.org/x/term"
@@ -140,6 +141,7 @@ type dateCell struct {
 	date     time.Time
 	selected bool
 	blank    bool
+	id string
 }
 
 func (d *dateCell) toggle(selected bool) {
@@ -148,16 +150,17 @@ func (d *dateCell) toggle(selected bool) {
 
 func (d dateCell) Render() string {
 	mystr := strconv.FormatInt(int64(d.date.Day()), 10)
+	// id := fmt.Sprintf("-%d-%s-%d", d.date.Year(), d.date.Format("01"), d.date.Day())
 	if len(mystr) == 1 {
 		mystr = " " + mystr
 	}
 	if d.selected {
-		return selectedCellStyle.Render(mystr)
+		return z.Mark(d.id, selectedCellStyle.Render(mystr))
 	}
 	if d.blank {
-		return blankCellStyle.Render("")
+		return z.Mark(d.id, blankCellStyle.Render(""))
 	}
-	return cellStyle.Render(mystr)
+	return z.Mark(d.id, cellStyle.Render(mystr))
 }
 
 type Model struct {
@@ -271,40 +274,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.MouseMsg:
 		switch msg.Type {
 		case tea.MouseLeft:
-			celWidth := lipgloss.Width(m.internalGrid[m.cursorY][m.cursorX].Render())
-			celHeight := lipgloss.Height(m.internalGrid[m.cursorY][m.cursorX].Render())
-			wo, _, _ := term.GetSize(int(os.Stdout.Fd()))
-			calWidth := int(wo / 2) /* */
-			calHeight := celHeight * len(m.internalGrid)
-			_, hr, _ := m.calendar()
-			hOffset := calHeight - hr + 1
-			wOffset := int(calWidth-(celWidth*len(m.internalGrid[0]))) - (celWidth / 2)
-			nX := int(math.Max((float64(msg.X-wOffset)+2), 0) / float64(celWidth))
-			nY := int(math.Max(float64(msg.Y-2)/float64(celHeight)-3, 0))
-			bounds := [][]int{
-				{
-					int((celWidth*nX)+wOffset-celWidth) - 1,
-					(int(celWidth) * (nX + 1)) - 1 + wOffset + int(celWidth) - 4,
-				},
-				{
-					((nY * celHeight) + hOffset - celHeight),
-					((nY + 1) * celHeight) + (celHeight * 2) + 4,
-				},
-			}
-			log.Println(bounds)
-			log.Printf("mouse! [%d][%d]", msg.X, msg.Y)
-			log.Printf("\nnm [%d][%d]", nX, nY)
-			if (msg.X >= (bounds[0][0]) && msg.X <= bounds[0][1]) && (msg.Y >= bounds[1][0] && msg.Y <= bounds[1][1]) {
-				m.cursorX = int(math.Min(float64(nX), 6))
-				m.cursorY = int(math.Min(float64(nY), 5))
+			for ia, a := range m.internalGrid {
+				for ib, b := range a {
+					if z.Get(b.id).InBounds(msg) {
+						m.cursorY = ia
+						m.cursorX = ib
+					}
+				}
 			}
 		}
 	}
 	inGrid, _, _ := makeMatrix(m.internalGrid[m.cursorY][m.cursorX].date, m.cursorY, m.cursorX)
 	m.internalGrid = inGrid
-	return m, func() tea.Msg {
-		return struct{}{}
-	}
+	return m, nil
 }
 
 func (m Model) View() string {
@@ -324,11 +306,12 @@ func (m Model) calendar() (string, int, int) {
 	otherOtherRet := ""
 	axisY := make([]string, 0)
 	wo, _, _ := term.GetSize(int(os.Stdout.Fd()))
-	axisY = append(axisY, monthStyle.Render(lipgloss.PlaceHorizontal(int(wo/2), lipgloss.Center, m.internalGrid[0][6].date.Format("January 2006"))))
+	axisY = append(axisY, z.Mark("title", monthStyle.Render(lipgloss.PlaceHorizontal(int(wo/2), lipgloss.Center, m.internalGrid[0][6].date.Format("January 2006")))))
 
 	header := make([]string, 0)
 	for i := 0; i < 7; i++ {
-		header = append(header, weekStyle.Render(m.internalGrid[0][i].date.Format("Mon")))
+		kak := m.internalGrid[0][i].date
+		header = append(header, z.Mark(fmt.Sprintf("wd-%s", kak.Format("Mon")), weekStyle.Render(kak.Format("Mon"))))
 	}
 	axisY = append(axisY, lipgloss.JoinHorizontal(lipgloss.Center, header...))
 	otherRet = lipgloss.Height(lipgloss.JoinVertical(lipgloss.Center, axisY...))
@@ -340,7 +323,7 @@ func (m Model) calendar() (string, int, int) {
 	}
 
 	s += lipgloss.JoinVertical(lipgloss.Center, axisY...)
-	return s, otherRet, lipgloss.Width(otherOtherRet)
+	return z.Mark("fullcalendar", s), otherRet, lipgloss.Width(otherOtherRet)
 }
 
 func (m Model) renderWeek(index int) string {
@@ -348,7 +331,8 @@ func (m Model) renderWeek(index int) string {
 	for i := 0; i < len(m.internalGrid[index]); i++ {
 		longlong = append(longlong, m.internalGrid[index][i].Render())
 	}
-	return lipgloss.JoinHorizontal(lipgloss.Center, longlong...)
+	y, w := m.internalGrid[index][0].date.ISOWeek()
+	return z.Mark(fmt.Sprintf("w-%d-%d", y, w), lipgloss.JoinHorizontal(lipgloss.Center, longlong...))
 }
 
 func (m *Model) updateAnchor(argo time.Time, now time.Time) {
@@ -406,6 +390,7 @@ func makeMatrix(sel time.Time, ya int, xa int) ([][]dateCell, int, int) {
 				selected: selBool,
 				date:     myDay,
 				blank:    blankBool,
+				id: z.NewPrefix(),
 			}
 			myDay = myDay.AddDate(0, 0, 1)
 		}
@@ -431,6 +416,7 @@ func printGrid(d [][]dateCell) {
 }
 
 func Initialize() Model {
+	z.NewGlobal()
 	rlnw := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Local)
 
 	my, mx := getDefaultMatrix(rlnw)

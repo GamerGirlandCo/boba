@@ -11,6 +11,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	z "github.com/lrstanley/bubblezone"
 )
 
 var (
@@ -114,11 +115,11 @@ func (m DemoModel) View() string {
 		result = *r
 	}
 	if m.demoStarted {
-		return lipgloss.JoinVertical(lipgloss.Center, 
+		return z.Scan(lipgloss.JoinVertical(lipgloss.Center, 
 			confirmTextStyle.Render(fmt.Sprintf("demoing bubble : %s", m.choice)),
 			(*(*m.List.SelectedItem().(DemoItem).model).value).View(),
 			result,
-			)
+			))
 	} else {
 		return "\n" + m.List.View()
 	}

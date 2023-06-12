@@ -6,6 +6,7 @@ require github.com/charmbracelet/bubbles v0.16.1
 
 require (
 	github.com/atotto/clipboard v0.1.4 // indirect
+	github.com/lrstanley/bubblezone v0.0.0-20230507010339-3326b9492591 // indirect
 	github.com/sahilm/fuzzy v0.1.0 // indirect
 )
 
