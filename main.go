@@ -21,10 +21,10 @@ func main() {
 	wo, ho, _ := term.GetSize(int(os.Stdout.Fd()))
 	log.Printf("term is [%dx%d]", wo, ho)
 
-	p := tea.NewProgram(demo.Setup(), tea.WithMouseCellMotion())
+	p := tea.NewProgram(demo.Setup(), /* tea.WithMouseCellMotion() */)
 	m, err := p.Run()
 	if err != nil {
-		fmt.Printf("Alas, there's been an error: %v", err)
+		fmt.Printf("well shit, there's been an error: %v", err)
 		os.Exit(1)
 	}
 	if resi := m.(demo.DemoModel).List.SelectedItem().(demo.DemoItem).Result; *resi != "" {
