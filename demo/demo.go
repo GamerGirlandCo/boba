@@ -48,7 +48,7 @@ func (d itemDeleg) Render(w io.Writer, m list.Model, index int, listItem list.It
 
 	if index == m.Index() {
 		fn = func(s ...string) string {
-			return selectedItemStyle.Render("♣ " + strings.Join(s, " "))
+			return selectedItemStyle.Render("🌸 " + strings.Join(s, " "))
 		}
 	}
 	fmt.Fprint(w, fn(str))
@@ -154,7 +154,7 @@ func Setup() DemoModel {
 	}
 
 	l := list.New(items, itemDeleg{}, 20, 15)
-	l.Title = "🌸 Select a Boba🧋 component to demo."
+	l.Title = "🧋 Select a Boba component to demo."
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 	l.Styles.Title = titleStyle
