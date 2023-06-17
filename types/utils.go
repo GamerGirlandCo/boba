@@ -1,6 +1,9 @@
 package types
 
-import "time"
+import (
+	"reflect"
+	"time"
+)
 
 type Predicate[T any] func(t T) bool
 
@@ -17,3 +20,18 @@ type GenResultMsg[T any] struct {
 }
 
 type TickMsg time.Time
+
+func FindField(val interface{}, name string) (*reflect.Value, int) {
+	var retI int = -1
+	fields := reflect.TypeOf(val)
+	values := reflect.ValueOf(val)
+	for i := 0; i < fields.NumField(); i++ {
+		cf := fields.Field(i).Name
+		if cf == name {
+			fv := values.Field(i)
+			return &fv, i
+		}
+	}
+	fv := reflect.ValueOf(nil)
+	return &fv, retI
+}

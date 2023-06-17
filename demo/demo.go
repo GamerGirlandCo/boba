@@ -131,6 +131,7 @@ func Setup() DemoModel {
 		"Date picker",
 		"Time picker",
 		"Time picker (with seconds)",
+		"Recursive list",
 	}
 	items := make([]list.Item, len(titles))
 	for i := range items {
@@ -142,6 +143,8 @@ func Setup() DemoModel {
 			modi = timepicker.Initialize(false)
 		case 2:
 			modi = timepicker.Initialize(true)
+		case 3:
+			modi = initRlistModel()
 		}
 		var minit string = ""
 		items[i] = DemoItem{
