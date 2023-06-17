@@ -25,7 +25,7 @@ func (r rListItem) FilterValue() string {
 	return r.Name
 }
 
-func (r rListItem) Children() []rListItem {
+func (r rListItem) Children() []recursivelist.Indentable[rListItem] {
 	return r.children
 }
 
@@ -45,7 +45,7 @@ func (d rListDelegate) Height() int                               { return 1 }
 func (d rListDelegate) Spacing() int                              { return 1 }
 func (d rListDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
 func (d rListDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	i, ok := listItem.(recursivelist.ListItem[rListItem])
+	i, ok := listItem.(recursivelist.ListItem[rListItem, rListItem])
 	if !ok {
 		return
 	}

@@ -19,7 +19,7 @@ type Indentable[T list.Item] interface {
 	list.Item
 	Lvl() int
 	FilterValue() string
-	Children() []Indentable[T]
+	Children() []T
 }
 
 
