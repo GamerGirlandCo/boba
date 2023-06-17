@@ -2,26 +2,24 @@ package recursivelist
 
 import (
 	// "fmt"
-	"reflect"
-	"strings"
-	// "io"
 
-	"git.tablet.sh/tablet/boba/types"
 	"github.com/charmbracelet/bubbles/list"
-	tea "github.com/charmbracelet/bubbletea"
-	lg "github.com/charmbracelet/lipgloss"
 )
 
-type ListItem[T list.Item] struct {
-	Component   list.Model
+type ListItem[T Indentable] struct {
 	children    *[]ListItem[T]
-	parent      *ListItem[T]
 	expanded    bool
 	Value       T
 	listoptions Options
 	ParentModel *Model[T]
+	Indentable
 }
 
+type Indentable interface {
+	list.Item
+	Lvl() int
+	FilterValue() string
+}
 
 func (i ListItem[T]) newParentModel() list.Model {
 	lis := make([]list.Item, 0)
@@ -35,6 +33,15 @@ func (i ListItem[T]) newParentModel() list.Model {
 	hi := (*i.ParentModel).options.Height
 	m := list.New(lis, d, wi, hi)
 	return m
+}
+
+func (i ListItem[T]) Flatten() []list.Item {
+	accum := make([]list.Item, 0)
+	for _, ite := range *i.children {
+		accum = append(accum, ite)
+		accum = append(accum, ite.Flatten()...)
+	}
+	return accum
 }
 
 func (i ListItem[T]) FilterValue() string {
@@ -62,18 +69,15 @@ func (i *ListItem[T]) recurseAndExpand(pm Model[T]) {
 }
 
 func (i *ListItem[T]) AddItem(item T, index int) {
-	comp := i.newParentModel()
 	listItem := ListItem[T]{
 		Value:     item,
-		Component: comp,
-		parent: i,
 		ParentModel: i.ParentModel,
 		children: &[]ListItem[T]{},
 	}
 	*i.children = append(*i.children, listItem)
 
-	// fmt.Printf("lalalalala %+v\n", i.Component)
-	i.Component.InsertItem(index, item)
+	// fmt.Printf("lalalalala\n %+v\n", i.ParentModel.list)
+	i.ParentModel.list.InsertItem(index, item)
 }
 
 func (i *ListItem[T]) AddMulti(items ...T) {
@@ -83,87 +87,12 @@ func (i *ListItem[T]) AddMulti(items ...T) {
 	}
 }
 
-func (i ListItem[T]) findIndent(lv *int) int {
-	whilevar := *i.parent
-	ret := 0
-	for whilevar.parent != nil {
-		ret++
-		whilevar = *whilevar.parent
-	}
-	return ret
-}
-func (i *ListItem[T]) setItemConfig(o ListOptions) {
-	filds := reflect.TypeOf(i.ParentModel.options)
-	values := reflect.ValueOf(i.ParentModel.options)
-
-	for j := 0; j < filds.NumField(); j++ {
-		f := filds.Field(j)
-		v := values.Field(j)
-		if veel, indo := types.FindField(o, f.Name); indo != -1 {
-			v.Set(*veel)
-		}
-		curFack := reflect.TypeOf(i.Component)
-		for k := 0; k < curFack.NumField(); k++ {
-			if curFack.Field(k).IsExported() && curFack.Name() == f.Name {
-				reflect.ValueOf(i.Component).Field(k).Set(v.Elem())
-			}
-		}
-	}
-	for _, item := range *i.children {
-		item.setItemConfig(o)
-	}
-}
-
-func (i *ListItem[T]) SetSize(w, h int) {
-	i.Component.SetSize(w, h)
-	for _, i := range *i.children {
-		i.SetSize(w, h)
-	}
-}
-
-func (i ListItem[T]) Init() tea.Cmd {
-	return nil
-}
-
-func (i ListItem[T]) View() string {
-	sb := strings.Builder{}
-	var np int = 0
-	for _, val := range *i.children {
-		nesto := val.findIndent(&np) * 2
-		indStyle := lg.NewStyle().Padding(0, 0, 0, nesto)
-			sb.WriteString(indStyle.Render(
-				val.Component.View(),
-			))
-			sb.WriteString("\n")
-			sb.WriteString(val.View())
-	}
-	return sb.String()
-}
-
-func (i ListItem[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-	var cmd tea.Cmd
-	i.Component, cmd = i.Component.Update(msg)
-	for _, impo := range *i.children {
-		nm, cmd := impo.Component.Update(msg)
-		impo.Component = nm
-		cmds = append(cmds, cmd)
-		nmo, cmd := impo.Update(msg)
-		impo = nmo.(ListItem[T])
-		cmds = append(cmds, cmd)
-
-	}
-	cmds = append(cmds, cmd)
-	return i, tea.Batch(cmds...)
-}
-
-func NewItem[T list.Item](item T, lid list.ItemDelegate) ListItem[T] {
-	compy := list.New([]list.Item{}, lid, 200, 400)
+func NewItem[T Indentable](item T, del list.ItemDelegate) ListItem[T] {
 	li := ListItem[T]{
 		Value:       item,
 		children:    &[]ListItem[T]{},
 		ParentModel: &Model[T]{},
-		Component: compy,
 	}
+	li.ParentModel.list = list.New([]list.Item{}, del, 200, 200)
 	return li
 }

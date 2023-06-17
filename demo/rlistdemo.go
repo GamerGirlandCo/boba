@@ -17,17 +17,28 @@ import (
 
 type rListItem struct {
 	Name string
-	// children []rListItem
+	children []rListItem
+	Parent *rListItem
 }
 
 func (r rListItem) FilterValue() string {
 	return r.Name
 }
 
+func (r rListItem) Lvl() int {
+	base := 0
+	par := r.Parent
+	for par != nil {
+		base++
+		par = par.Parent
+	}
+	return base
+}
+
 type rListDelegate struct{}
 
 func (d rListDelegate) Height() int                               { return 1 }
-func (d rListDelegate) Spacing() int                              { return 0 }
+func (d rListDelegate) Spacing() int                              { return 1 }
 func (d rListDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
 func (d rListDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
 	i, ok := listItem.(recursivelist.ListItem[rListItem])
@@ -43,31 +54,30 @@ func (d rListDelegate) Render(w io.Writer, m list.Model, index int, listItem lis
 		}
 	}
 	s += " " + i.Value.Name
-	fn := styles.DefaultStyles.Text.Render
+	fn := styles.DefaultStyles.Text.Copy().Padding(0, 0, 0, i.Value.Lvl() * 2).Render
 
 	if index == m.Index() {
 		fn = func(s ...string) string {
-			return styles.DefaultStyles.Active.Render(strings.Join(s, " "))
+			return styles.DefaultStyles.Active.Copy().Padding(0, 0, 0, i.Value.Lvl() * 2).Render(strings.Join(s, " "))
 		}
 	}
 	fmt.Fprint(w, fn(s))
 }
 
 
-func genRandList(mo recursivelist.Model[rListItem], deleg list.ItemDelegate, maxDepth int, curDepth int) ([]recursivelist.ListItem[rListItem]) {
+func genRandList(par *rListItem, deleg list.ItemDelegate, maxDepth *int, curDepth int) ([]recursivelist.ListItem[rListItem], []rListItem) {
 	retVal := make([]recursivelist.ListItem[rListItem], 0)
 	secRetVal := make([]rListItem, 0)
 	for i := 0; i < rand.Intn(18) + 3; i++ {
 		sts := []recursivelist.ListItem[rListItem]{}
 		cv := recursivelist.NewItem[rListItem](rListItem{
 				Name: uuid.NewString(),
-			}, mo.Delegate)
+				Parent: par,
+			}, deleg)
 		// fmt.Printf("%d || %+v\n", i + 1, mo)
-		*cv.ParentModel = mo
-		if curDepth < maxDepth {
+		if curDepth < *maxDepth {
 			curDepth++
-			sts = genRandList(mo, deleg, maxDepth, curDepth)
-			
+			sts, (cv.Value).children = genRandList(&cv.Value, deleg, maxDepth, curDepth)
 			// fmt.Printf("%+v\n", sts)
 			// fmt.Println("CVCVCVCVCCVCVCVCVCVCVCV")
 			// fmt.Printf("%+v\n", cv.Component)
@@ -87,7 +97,8 @@ func genRandList(mo recursivelist.Model[rListItem], deleg list.ItemDelegate, max
 
 func initRlistModel() recursivelist.Model[rListItem] {
 	m := recursivelist.New[rListItem]([]rListItem{}, rListDelegate{}, 500, 200)
-	rlisto := genRandList(m, rListDelegate{}, 10, 0)
+	m.SetExpandable(true)
+	rlisto, _ := genRandList(nil, rListDelegate{}, &bla, 0)
 	m.SetItems(rlisto)
 	
 	m.SetExpandable(false)
