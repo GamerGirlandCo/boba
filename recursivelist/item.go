@@ -3,12 +3,15 @@ package recursivelist
 import (
 	// "fmt"
 
+	"math"
+
 	"github.com/charmbracelet/bubbles/list"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type ListItem[T Indentable[T]] struct {
 	expanded    bool
-	Value       T
+	Value       *T
 	ParentModel *Model[T]
 }
 
@@ -24,9 +27,10 @@ type Indentable[T list.Item] interface {
 	Find(T) int
 	Flatten() []T
 	RModify(func(T))
-	Value() T
+	Value() *T
 	ParentOptions() Options
 	SetOptions(Options)
+	TotalBeneath() int
 }
 
 func sliceNFind[T Indentable[T]](cur []Indentable[T]) int {
@@ -39,8 +43,9 @@ func sliceNFind[T Indentable[T]](cur []Indentable[T]) int {
 }
 
 func (i *ListItem[T]) Add(item Indentable[T], index int) {
+	v := item.Value()
 	listItem := ListItem[T]{
-		Value:       item.Value(),
+		Value:       v,
 		ParentModel: i.ParentModel,
 	}
 	// i.Children() = append(i.Children(), listItem)
@@ -48,27 +53,30 @@ func (i *ListItem[T]) Add(item Indentable[T], index int) {
 	var top *T = item.Parent()
 	accum := item.IndexWithinParent()
 	for top != nil {
-		t := *top
-		iwi := t.IndexWithinParent()
-		accum += iwi + 1
-		if iwi > 0 {
-			for _, wee := range (*t.Parent()).Children()[0:iwi - 1] {
+		iwi := (*top).IndexWithinParent()
+		if iwi >= 0 {
+			accum += iwi + 1
+			slic := int(math.Min(
+				float64(iwi),
+				float64(len((*top).Children())),
+			))
+			p := (*top)
+			for _, wee := range (p).Children()[0:slic] {
 				accum += sliceNFind[T](wee.Children())
 			}
 		}
-		top = t.Parent()
 
+		top = (*top).Parent()
 	}
-	(*item.Parent()).Children()
 	i.ParentModel.list.InsertItem(accum + index, listItem)
 }
 
 func (i ListItem[T]) Flatten() []T {
-	return i.Value.Flatten()
+	return (*i.Value).Flatten()
 }
 
 func (i ListItem[T]) FilterValue() string {
-	return i.Value.FilterValue()
+	return (*i.Value).FilterValue()
 }
 func (i ListItem[T]) Expanded() bool {
 	return i.expanded
@@ -78,17 +86,24 @@ func (i ListItem[T]) Point() *ListItem[T] {
 	return &i
 }
 
-func (i *ListItem[T]) SetExpanded(v bool, pm Model[T]) {
-	if i.Value.ParentOptions().Expandable {
+func (i *ListItem[T]) SetExpanded(v bool) tea.Cmd {
+	if (*i.Value).ParentOptions().Expandable {
 		i.expanded = v
 	}
+	if !v {
+		for ii := 0; ii < (*i.Value).TotalBeneath(); ii++ {
+			i.ParentModel.list.RemoveItem(ii)
+		}
+	}
+	return nil
 }
 
 func NewItem[T Indentable[T]](item T, del list.ItemDelegate) ListItem[T] {
 	li := ListItem[T]{
-		Value:       item,
+		Value:       &item,
 		ParentModel: &Model[T]{
 		},
+		expanded: true,
 	}
 	li.ParentModel.list = list.New([]list.Item{}, del, 200, 200)
 	return li

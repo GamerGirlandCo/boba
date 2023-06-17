@@ -13,7 +13,7 @@ import (
 
 type rListItem struct {
 	Name     string
-	children *[]rListItem
+	children []rListItem
 	parent   *rListItem
 	Options  recursivelist.Options
 }
@@ -22,13 +22,13 @@ func (r rListItem) FilterValue() string {
 	return r.Name
 }
 
-func (r rListItem) Value() rListItem {
-	return r
+func (r rListItem) Value() *rListItem {
+	return &r
 }
 
 func (r rListItem) Flatten() []rListItem {
 	accum := make([]rListItem, 0)
-	for _, ite := range *r.children {
+	for _, ite := range r.children {
 		accum = append(accum, ite)
 		accum = append(accum, ite.Flatten()...)
 	}
@@ -36,15 +36,15 @@ func (r rListItem) Flatten() []rListItem {
 }
 
 func (r rListItem) RModify(fnn func(rListItem)) {
-	for _, val := range *r.children {
+	for _, val := range r.children {
 		// val.RModify(fnn)
 		fnn(val)
 	}
 }
 
 func (r rListItem) Find(a rListItem) int {
-	for u := range *r.children {
-		if (*r.children)[u].Name == a.Name {
+	for u := range r.children {
+		if (r.children)[u].Name == a.Name {
 			return u
 		}
 	}
@@ -53,7 +53,7 @@ func (r rListItem) Find(a rListItem) int {
 
 func (r rListItem) Children() []recursivelist.Indentable[rListItem] {
 	ret := make([]recursivelist.Indentable[rListItem], 0)
-	for _, i := range *r.children {
+	for _, i := range r.children {
 		ret = append(ret, i)
 	}
 	return ret
@@ -63,10 +63,20 @@ func (r rListItem) Parent() *rListItem {
 	return r.parent
 }
 
-func (r rListItem) IndexWithinParent() int {
-	if r.Parent() != nil {
-		return r.Parent().Find(r)
+func (r rListItem) TotalBeneath() int {
+	accum := len(r.children)
+	for _, val := range r.children {
+		accum += val.TotalBeneath()
 	}
+	return accum
+}
+
+func (r rListItem) IndexWithinParent() int {
+	if r.parent != nil {
+		v := r.parent.Find(r)
+		return v
+	}
+
 	return 0
 }
 
@@ -77,7 +87,7 @@ func (r rListItem) Add(ra rListItem) {
 
 func (r *rListItem) RealAdd(ra rListItem) {
 	ra.parent = r
-	*r.children = append(*r.children, ra)
+	r.children = append(r.children, ra)
 	ra.parent = r
 }
 
@@ -103,7 +113,7 @@ func (r rListItem) ParentOptions() recursivelist.Options {
 
 func (r rListItem) SetOptions(o recursivelist.Options) {
 	*&r.Options = o
-	for _, rack := range *r.children {
+	for _, rack := range r.children {
 		rack.Options = o
 		rack.SetOptions(o)
 	}
@@ -112,7 +122,7 @@ func (r rListItem) SetOptions(o recursivelist.Options) {
 type rListDelegate struct{}
 
 func (d rListDelegate) Height() int                               { return 1 }
-func (d rListDelegate) Spacing() int                              { return 1 }
+func (d rListDelegate) Spacing() int                              { return 0 }
 func (d rListDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
 func (d rListDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
 	i := recursivelist.NewItem[rListItem](listItem.(rListItem), d)
@@ -128,12 +138,13 @@ func (d rListDelegate) Render(w io.Writer, m list.Model, index int, listItem lis
 			s += i.Value.ParentOptions().ClosedPrefix + " "
 		}
 	}
-	s += " " + i.Value.Name
-	fn := styles.DefaultStyles.Text.Copy().Padding(0, 0, 0, i.Value.Lvl()).Render
+	s += "" + i.Value.Name
+	indento := i.Value.Lvl() * 2
+	fn := styles.DefaultStyles.Text.Copy().Padding(0, 0, 0, indento).Render
 
 	if index == m.Index() {
 		fn = func(s ...string) string {
-			return styles.DefaultStyles.Active.Copy().Padding(0, 0, 0, i.Value.Lvl()).Render(strings.Join(s, " "))
+			return styles.DefaultStyles.Active.Copy().Padding(0, 0, 0, indento).Render(strings.Join(s, " "))
 		}
 	}
 	fmt.Fprint(w, fn(s))

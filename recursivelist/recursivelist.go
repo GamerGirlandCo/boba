@@ -4,11 +4,27 @@ import (
 	// "fmt"
 
 	"log"
+	"os"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"golang.org/x/term"
 	// lg "github.com/charmbracelet/lipgloss"
 )
+
+type KeyMap struct {
+	Expand key.Binding
+	Choose      key.Binding
+	Quit        key.Binding
+}
+
+var DefaultKeys KeyMap = KeyMap{
+	Expand: key.NewBinding(
+		key.WithKeys(tea.KeyCtrlQuestionMark.String()),
+		key.WithHelp("ctrl+?", "expand/collapse"),
+	),
+}
 
 type Options struct {
 	ClosedPrefix string
@@ -17,6 +33,7 @@ type Options struct {
 	Expandable   bool
 	Width        int
 	Height       int
+	Keymap KeyMap
 }
 
 func (o *Options) SetExpandable(v bool) {
@@ -27,7 +44,7 @@ type ListOptions struct {
 	Keymap            list.KeyMap
 	Styles            list.Styles
 	Title             string
-	FilterintEnabled  bool
+	FilteringEnabled  bool
 	InfiniteScrolling bool
 }
 
@@ -42,12 +59,15 @@ func (m *Model[T]) SetSize(w, h int) {
 	m.list.SetSize(w, h)
 }
 
-func (m *Model[T]) recurseAndExpand(pm Model[T], i ListItem[T]) {
+func (m *Model[T]) recurseAndExpand(i ListItem[T]) tea.Cmd {
+	var cmds []tea.Cmd
 	for _, ee := range m.list.Items() {
-		if ee.(T).Lvl() > i.Value.Lvl() {
-			ee.(ListItem[T]).Point().SetExpanded(true, *m)
+		if ee.(T).Lvl() > (*i.Value).Lvl() {
+			ee.(ListItem[T]).Point().SetExpanded(true)
+
 		}
 	}
+	return tea.Batch(cmds...)
 }
 
 func (m *Model[T]) SetItems(argument []ListItem[T]) {
@@ -98,10 +118,17 @@ func (m Model[T]) View() string {
 func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
-	// case tea.KeyMsg:
+	case tea.KeyMsg:
+		switch {
+		case key.Matches(msg, m.Options.Keymap.Expand):
+			blip := m.list.SelectedItem().(ListItem[T])
+			blip.expanded = !blip.expanded
+			cmds = append(cmds, m.recurseAndExpand(blip))
+		}
 	case tea.MouseMsg:
 		log.Print("it is a mouse.", msg)
 	}
+	
 	// for _, ra := range m.items {
 	// nlm, cmd := ra.Component.Update(msg)
 	// ra.Component = nlm
@@ -120,8 +147,6 @@ func New[T Indentable[T]](items []T, delegate list.ItemDelegate, width, height i
 		Delegate: delegate,
 		items:    []ListItem[T]{},
 	}
-	m.list.Styles = list.DefaultStyles()
-	m.list.SetFilteringEnabled(false)
 	for iii, it := range items {
 		lis = append(lis, it)
 		ni := NewItem(it, delegate)
@@ -129,7 +154,11 @@ func New[T Indentable[T]](items []T, delegate list.ItemDelegate, width, height i
 		m.items = append(m.items, ni)
 		*m.items[iii].ParentModel = m
 	}
-	m.list = list.New(lis, delegate, width, height)
+	_, h, _ := term.GetSize(int(os.Stdout.Fd()))
+	m.list = list.New(lis, delegate, width, h - 10)
+	m.list.Styles = list.DefaultStyles()
+	m.list.SetFilteringEnabled(false)
+	// m.list.InfiniteScrolling = true
 	m.Flatten()
 	return m
 }
