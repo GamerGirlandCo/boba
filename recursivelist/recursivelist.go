@@ -25,18 +25,18 @@ type ListOptions struct {
 	InfiniteScrolling bool
 }
 
-type Model[T Indentable] struct {
+type Model[T Indentable[U], U list.Item] struct {
 	options  *Options
-	items    []ListItem[T]
+	items    []ListItem[T,U]
 	Delegate list.ItemDelegate
 	list list.Model
 }
 
-func (m *Model[T]) SetSize(w, h int) {
+func (m *Model[T, U]) SetSize(w, h int) {
 	m.list.SetSize(w, h)
 }
 
-func (m *Model[T]) SetExpandable(v bool) {
+func (m *Model[T, U]) SetExpandable(v bool) {
 	m.options.Expandable = v
 	for _, i := range m.items {
 		if !v {
@@ -45,15 +45,15 @@ func (m *Model[T]) SetExpandable(v bool) {
 	}
 }
 
-func (m *Model[T]) Expandable() bool {
+func (m *Model[T, U]) Expandable() bool {
 	return m.options.Expandable
 }
 
-func (m *Model[T]) SetItems(argument []ListItem[T]) {
+func (m *Model[T, U]) SetItems(argument []ListItem[T, U]) {
 	m.items = argument
 }
 
-func (m *Model[T]) Flatten() tea.Cmd {
+func (m *Model[T, U]) Flatten() tea.Cmd {
 	accum := make([]list.Item, 0)
 	for _, ite := range m.items {
 		accum = append(accum, ite)
@@ -63,12 +63,12 @@ func (m *Model[T]) Flatten() tea.Cmd {
 
 }
 
-func (i Model[T]) Init() tea.Cmd {
+func (i Model[T, U]) Init() tea.Cmd {
 	// return tea.EnterAltScreen
 	return nil
 }
 
-func (m Model[T]) View() string {
+func (m Model[T, U]) View() string {
 	// sb := strings.Builder{}
 	// var np int = 0
 	// for _, val := range *i.children {
@@ -83,7 +83,7 @@ func (m Model[T]) View() string {
 	return lak
 }
 
-func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model[T, U]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -103,9 +103,9 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func New[T Indentable](items []T, delegate list.ItemDelegate, width, height int) Model[T] {
+func New[T Indentable[U], U list.Item](items []T, delegate list.ItemDelegate, width, height int) Model[T, U] {
 	lis := make([]list.Item, 0)
-	m := Model[T]{
+	m := Model[T, U]{
 		options: &Options{
 			ClosedPrefix: ">",
 			OpenPrefix:   "⌵",
@@ -113,14 +113,14 @@ func New[T Indentable](items []T, delegate list.ItemDelegate, width, height int)
 			Height:       height,
 		},
 		Delegate: delegate,
-		items:    []ListItem[T]{},
+		items:    []ListItem[T, U]{},
 		list: list.New(lis, delegate, width, height),
 	}
 	m.list.Styles = list.DefaultStyles()
 	m.list.SetFilteringEnabled(false)
 	for iii, it := range items {
 		lis = append(lis, it)
-		ni := NewItem[T](it, delegate)
+		ni := NewItem[T, U](it, delegate)
 		*ni.ParentModel = m
 		m.items = append(m.items, ni)
 		// (m.items[iii]).Component = lm
