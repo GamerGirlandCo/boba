@@ -6,81 +6,80 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 )
 
-type ListItem[T Indentable[U], U list.Item] struct {
-	children    *[]ListItem[T, U]
+type ListItem[T Indentable[U], U ListItem] struct {
 	expanded    bool
 	Value       T
-	listoptions Options
+	CurrentP *ListItem[T]
 	ParentModel *Model[T, U]
-	Indentable[U]
 }
 
 type Indentable[T list.Item] interface {
 	list.Item
 	Lvl() int
+	IndexWithinParent() int
 	FilterValue() string
-	Children() []T
+	Children() []Indentable[T]
+	Parent() *T
+	Add(T)
+	AddMulti(...T)
+	Find(T) int
+	Flatten() []T
+	RModify(func(T))
+	// ParentOptions() Options
 }
 
-
-func (i ListItem[T, U]) Flatten() []list.Item {
-	accum := make([]list.Item, 0)
-	for _, ite := range *i.children {
-		accum = append(accum, ite)
-		accum = append(accum, ite.Flatten()...)
+func sliceNFind[T Indentable[T]](cur []Indentable[T]) int {
+	accum := 0
+	for _, i := range cur {
+		accum += 1
+		accum += sliceNFind[T](i.Children())
 	}
 	return accum
 }
 
-func (i ListItem[T, U]) FilterValue() string {
+func (i *ListItem[T]) Add(item T, index int) {
+	listItem := ListItem[T]{
+		Value:       item,
+		ParentModel: i.ParentModel,
+	}
+	listItem.CurrentP = &listItem
+	// i.Children() = append(i.Children(), listItem)
+
+	var top *T = item.Parent()
+	accum := item.IndexWithinParent()
+	for top != nil {
+		t := *top
+		iwi := t.IndexWithinParent()
+		accum += iwi + 1
+		if iwi > 0 {
+			for _, wee := range (*t.Parent()).Children()[0:iwi - 1] {
+				accum += sliceNFind[T](wee.Children())
+			}
+		}
+		top = t.Parent()
+
+	}
+	(*item.Parent()).Children()
+	i.ParentModel.list.InsertItem(accum + index, listItem)
+}
+
+func (i ListItem[T]) Flatten() []T {
+	return i.Value.Flatten()
+}
+
+func (i ListItem[T]) FilterValue() string {
 	return i.Value.FilterValue()
 }
-func (i ListItem[T, U]) Expanded() bool {
+func (i ListItem[T]) Expanded() bool {
 	return i.expanded
 }
 
-func (i ListItem[T, U]) ListOptions() Options {
-	return i.listoptions
+func (i ListItem[T]) Point() *ListItem[T] {
+	return &i
 }
 
-func (i *ListItem[T, U]) SetExpanded(v bool, pm Model[T, U]) {
-	if pm.options.Expandable {
+func (i *ListItem[T]) SetExpanded(v bool, pm Model[T]) {
+	if pm.Options.Expandable {
 		i.expanded = v
 	}
-}
-
-func (i *ListItem[T, U]) recurseAndExpand(pm Model[T, U]) {
-	i.SetExpanded(true, pm)
-	for _, i := range *i.children {
-		i.recurseAndExpand(pm)
-	}
-}
-
-func (i *ListItem[T, U]) AddItem(item T, index int) {
-	listItem := ListItem[T, U]{
-		Value:     item,
-		ParentModel: i.ParentModel,
-		children: &[]ListItem[T, U]{},
-	}
-	*i.children = append(*i.children, listItem)
-
-	// fmt.Printf("lalalalala\n %+v\n", i.ParentModel.list)
-	i.ParentModel.list.InsertItem(index, item)
-}
-
-func (i *ListItem[T, U]) AddMulti(items ...T) {
-	leng := len(*i.children)
-	for indy, ii := range items {
-		i.AddItem(ii, leng+indy)
-	}
-}
-
-func NewItem[T Indentable[U], U list.Item](item T, del list.ItemDelegate) ListItem[T, U] {
-	li := ListItem[T, U]{
-		Value:       item,
-		children:    &[]ListItem[T, U]{},
-		ParentModel: &Model[T, U]{},
-	}
-	li.ParentModel.list = list.New([]list.Item{}, del, 200, 200)
-	return li
 }

@@ -89,6 +89,7 @@ func (m DemoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if !m.demoStarted {
 				m.demoStarted = true
+				cmds = append(cmds, (*m.List.SelectedItem().(DemoItem).model.value).Init())
 				m.choice = m.List.SelectedItem().(DemoItem).text
 			} else {
 				anon()
