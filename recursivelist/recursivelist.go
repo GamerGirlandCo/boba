@@ -19,6 +19,10 @@ type Options struct {
 	Height       int
 }
 
+func (o *Options) SetExpandable(v bool) {
+	o.Expandable = v
+}
+
 type ListOptions struct {
 	Keymap            list.KeyMap
 	Styles            list.Styles
@@ -27,24 +31,15 @@ type ListOptions struct {
 	InfiniteScrolling bool
 }
 
-type Model[T Indentable[U], U list.Item] struct {
-	Options  *Options
+type Model[T Indentable[T]] struct {
 	items    []ListItem[T]
 	Delegate list.ItemDelegate
 	list     list.Model
+	Options Options
 }
 
-func (m *Model[T, U]) SetSize(w, h int) {
+func (m *Model[T]) SetSize(w, h int) {
 	m.list.SetSize(w, h)
-}
-
-func (m *Model[T]) SetExpandable(v bool) {
-	m.Options.Expandable = v
-	for _, i := range m.items {
-		if !v {
-			m.recurseAndExpand(*m, i)
-		}
-	}
 }
 
 func (m *Model[T]) recurseAndExpand(pm Model[T], i ListItem[T]) {
@@ -53,19 +48,6 @@ func (m *Model[T]) recurseAndExpand(pm Model[T], i ListItem[T]) {
 			ee.(ListItem[T]).Point().SetExpanded(true, *m)
 		}
 	}
-}
-
-func (m *Model[T]) NewItem(item T, del list.ItemDelegate) ListItem[T] {
-	li := ListItem[T]{
-		Value:       item,
-		ParentModel: m,
-	}
-	li.ParentModel.list = list.New([]list.Item{}, del, 200, 200)
-	return li
-}
-
-func (m *Model[T]) Expandable() bool {
-	return m.Options.Expandable
 }
 
 func (m *Model[T]) SetItems(argument []ListItem[T]) {
@@ -132,17 +114,9 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-
-
 func New[T Indentable[T]](items []T, delegate list.ItemDelegate, width, height int) Model[T] {
 	lis := make([]list.Item, 0)
 	m := Model[T]{
-		Options: &Options{
-			ClosedPrefix: ">",
-			OpenPrefix:   "⌵",
-			Width:        width,
-			Height:       height,
-		},
 		Delegate: delegate,
 		items:    []ListItem[T]{},
 	}
@@ -150,12 +124,12 @@ func New[T Indentable[T]](items []T, delegate list.ItemDelegate, width, height i
 	m.list.SetFilteringEnabled(false)
 	for iii, it := range items {
 		lis = append(lis, it)
-		ni := m.NewItem(it, delegate)
+		ni := NewItem(it, delegate)
 		*ni.ParentModel = m
 		m.items = append(m.items, ni)
 		*m.items[iii].ParentModel = m
 	}
-	m.list = list.New(lis, delegate, 0, 0)
+	m.list = list.New(lis, delegate, width, height)
 	m.Flatten()
 	return m
 }

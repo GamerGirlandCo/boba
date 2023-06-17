@@ -6,11 +6,10 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 )
 
-type ListItem[T Indentable[U], U ListItem] struct {
+type ListItem[T Indentable[T]] struct {
 	expanded    bool
 	Value       T
-	CurrentP *ListItem[T]
-	ParentModel *Model[T, U]
+	ParentModel *Model[T]
 }
 
 type Indentable[T list.Item] interface {
@@ -25,7 +24,9 @@ type Indentable[T list.Item] interface {
 	Find(T) int
 	Flatten() []T
 	RModify(func(T))
-	// ParentOptions() Options
+	Value() T
+	ParentOptions() Options
+	SetOptions(Options)
 }
 
 func sliceNFind[T Indentable[T]](cur []Indentable[T]) int {
@@ -37,12 +38,11 @@ func sliceNFind[T Indentable[T]](cur []Indentable[T]) int {
 	return accum
 }
 
-func (i *ListItem[T]) Add(item T, index int) {
+func (i *ListItem[T]) Add(item Indentable[T], index int) {
 	listItem := ListItem[T]{
-		Value:       item,
+		Value:       item.Value(),
 		ParentModel: i.ParentModel,
 	}
-	listItem.CurrentP = &listItem
 	// i.Children() = append(i.Children(), listItem)
 
 	var top *T = item.Parent()
@@ -79,7 +79,17 @@ func (i ListItem[T]) Point() *ListItem[T] {
 }
 
 func (i *ListItem[T]) SetExpanded(v bool, pm Model[T]) {
-	if pm.Options.Expandable {
+	if i.Value.ParentOptions().Expandable {
 		i.expanded = v
 	}
+}
+
+func NewItem[T Indentable[T]](item T, del list.ItemDelegate) ListItem[T] {
+	li := ListItem[T]{
+		Value:       item,
+		ParentModel: &Model[T]{
+		},
+	}
+	li.ParentModel.list = list.New([]list.Item{}, del, 200, 200)
+	return li
 }
