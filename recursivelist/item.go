@@ -139,10 +139,20 @@ func (i ListItem[T]) View() string {
 	}
 	return sb.String()
 }
+
 func (i ListItem[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 	i.Component, cmd = i.Component.Update(msg)
+	for _, impo := range *i.children {
+		nm, cmd := impo.Component.Update(msg)
+		impo.Component = nm
+		cmds = append(cmds, cmd)
+		nmo, cmd := impo.Update(msg)
+		impo = nmo.(ListItem[T])
+		cmds = append(cmds, cmd)
+
+	}
 	cmds = append(cmds, cmd)
 	return i, tea.Batch(cmds...)
 }

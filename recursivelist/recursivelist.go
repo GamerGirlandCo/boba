@@ -85,9 +85,13 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 
 	}
-	for _, ra := range m.items {
+	for id, ra := range m.items {
 		nlm, cmd := ra.Component.Update(msg)
+		cmds = append(cmds, cmd)
 		ra.Component = nlm
+
+		something, cmd := ra.Update(msg)
+		m.items[id] = something.(ListItem[T])
 		cmds = append(cmds, cmd)
 	}
 
@@ -117,8 +121,9 @@ func New[T list.Item](items []T, delegate list.ItemDelegate, width, height int) 
 		*ni.ParentModel = m
 		m.items = append(m.items, ni)
 		lm := list.New(lis, delegate, width, height)
-		(m.items[iii]).Component = lm
+		lm.InfiniteScrolling = true
 		lm.SetFilteringEnabled(false)
+		(m.items[iii]).Component = lm
 		m.items[iii].ParentModel = &m
 	}
 	return m
