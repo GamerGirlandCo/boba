@@ -18,6 +18,21 @@ type rListItem struct {
 	Options  recursivelist.Options
 }
 
+func (r *rListItem) realAdd(ra rListItem) {
+	ra.parent = r
+	*r.children = append(*r.children, ra)
+}
+
+func (r rListItem) Add(ra rListItem) {
+	(&r).realAdd(ra)
+}
+
+func (r rListItem) AddMulti(ra ...rListItem) {
+  for _, val := range ra {
+    r.Add(val)
+  }
+}
+
 func (r rListItem) Find(a rListItem) int {
 	for u := range *r.children {
 		if (*r.children)[u].Name == a.Name {
@@ -54,12 +69,13 @@ func (r rListItem) GetParent() *rListItem {
 	return r.parent
 }
 
-func (r rListItem) GetChildren() []recursivelist.ItemWrapper[rListItem] {
-	var c []recursivelist.ItemWrapper[rListItem]
-	for _, val := range *r.children {
-		c = append(c, recursivelist.NewItem[rListItem](val, rListDelegate{}).Value())
-	}
-	return c
+func (r rListItem) GetChildren() []rListItem {
+	// var c []recursivelist.ItemWrapper[rListItem]
+	// for _, val := range *r.children {
+	// 	c = append(c, recursivelist.NewItem[rListItem](val, rListDelegate{}).Value())
+	// }
+	// return c
+	return *r.children
 }
 func (r rListItem) TotalBeneath() int {
 	accum := len(*r.children)
@@ -69,13 +85,8 @@ func (r rListItem) TotalBeneath() int {
 	return accum
 }
 
-func (r rListItem) SetChildren(ree []recursivelist.ItemWrapper[rListItem]) {
-	choild := make([]rListItem, 0)
-	for _, val := range ree {
-		choild = append(choild, *val.Value())
-	}
-	reeo := &r
-	*reeo.children = choild
+func (r rListItem) SetChildren(ree []rListItem) {
+	r.children = &ree
 }
 
 func (r rListItem) Value() *rListItem {
@@ -103,11 +114,15 @@ func (d rListDelegate) Render(w io.Writer, m list.Model, index int, listItem lis
 	}
 	s += "" + i.Value().Name
 	indento := i.Value().Lvl() * 3
-	fn := styles.DefaultStyles.Text.Copy().Margin(0, 0, 0, indento).Render
+	fn := styles.DefaultStyles.Text.Copy().
+		Width(i.ParentModel.Options.Width).
+		PaddingLeft(indento).Render
 
 	if index == m.Index() {
 		fn = func(s ...string) string {
-			return styles.DefaultStyles.Active.Copy().Margin(0, 0, 0, indento).Render(strings.Join(s, " "))
+			return styles.DefaultStyles.Active.Copy().
+				PaddingLeft(indento).
+				Render(strings.Join(s, " "))
 		}
 	}
 	fmt.Fprint(w, fn(s))

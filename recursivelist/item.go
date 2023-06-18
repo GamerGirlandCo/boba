@@ -21,18 +21,18 @@ type ItemWrapper[T any] interface {
 	list.Item
 	Find(T) int
 	IndexWithinParent() int
-	GetChildren() []ItemWrapper[T]
-	SetChildren([]ItemWrapper[T])
+	GetChildren() []T
+	SetChildren([]T)
 	GetParent() *T
 	Value() *T
 	Lvl() int
+	Add(T)
+	AddMulti(...T)
 }
 
 type IIndentable[T ItemWrapper[T]] interface {
 	list.Item
 	FilterValue() string
-	Add(IIndentable[T])
-	AddMulti(...T)
 	Flatten() []ListItem[T]
 	RModify(func(T))
 	Value() *T
@@ -46,7 +46,7 @@ func (r ListItem[T]) point() T {
 }
 
 func (r *ListItem[T]) SetChildren(k []ListItem[T]) {
-	choild := make([]ItemWrapper[T], 0)
+	choild := make([]T, 0)
 	for _, val := range k {
 		choild = append(choild, *val.value)
 	}
@@ -58,15 +58,19 @@ func (r ListItem[T]) FilterValue() string {
 	return (*r.value).FilterValue()
 }
 
-func (r ListItem[T]) Value() T {
-	return *r.value
+func (r ListItem[T]) Value() *T {
+	return r.value
 }
 
 func (r ListItem[T]) Flatten() []ListItem[T] {
 	accum := make([]ListItem[T], 0)
 	accum = append(accum, r)
 	for _, ite := range *r.Children {
-		accum = append(accum, ite.Flatten()...)
+		if ite.expanded {
+			accum = append(accum, ite.Flatten()...)
+		} else {
+			accum = append(accum, ite)
+		}
 	}
 	return accum
 }
@@ -108,27 +112,23 @@ func (r ListItem[T]) IndexWithinParent() int {
 	return 0
 }
 
-func sliceNFind[T ItemWrapper[T]](cur []ItemWrapper[T]) int {
+func sliceNFind[T ItemWrapper[T]](cur []T) int {
 	accum := 0
 	for _, i := range cur {
 		accum += 1
-		accum += sliceNFind[T](i.GetChildren())
+		accum += sliceNFind[T]((*(*i.Value()).Value()).GetChildren())
 	}
 	return accum
 }
 
-func (i *ListItem[T]) realAdd(item T, index int) {
-	whatthefuck := make([]ListItem[T], 0)
-	listItem := ListItem[T]{
-		value:       &item,
-		ParentModel: i.ParentModel,
-		Children:    &whatthefuck,
-		Parent:      i,
+func (i *ListItem[T]) realAdd(item ListItem[T], index int) {
+
+	*i.Children = append(*i.Children, item)
+
+	var top *T
+	if item.Parent != nil {
+		top = item.Parent.value
 	}
-
-	*i.Children = append(*i.Children, listItem)
-
-	var top *T = listItem.Parent.value
 	accum := item.IndexWithinParent()
 	for top != nil {
 		iwi := (*top).IndexWithinParent()
@@ -146,12 +146,11 @@ func (i *ListItem[T]) realAdd(item T, index int) {
 
 		top = (*top).GetParent()
 	}
-	i.ParentModel.list.InsertItem(accum+index, listItem)
+	i.ParentModel.list.InsertItem(accum+index, item)
 }
 
-func (i ListItem[T]) Add(item T, index int) {
-	point := &i
-	point.realAdd(item, index)
+func (i ListItem[T]) Add(item ListItem[T], index int) {
+	(&i).realAdd(item, index)
 }
 
 func (i ListItem[T]) Expanded() bool {

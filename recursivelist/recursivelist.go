@@ -63,8 +63,10 @@ func (m *Model[T]) SetSize(w, h int) {
 func (m *Model[T]) recurseAndExpand(i ListItem[T]) tea.Cmd {
 	var cmds []tea.Cmd
 	for _, ee := range m.list.Items() {
-		if (*ee.(ListItem[T]).value).Lvl() > i.Value().Lvl() {
-			ee.(ListItem[T]).Point().SetExpanded(true)
+		curLevel := (*ee.(ListItem[T]).value).Lvl()
+		lastLvl := (*i.Value()).Lvl()
+		if curLevel <= lastLvl {
+			ee.(ListItem[T]).Point().SetExpanded(!ee.(ListItem[T]).expanded)
 		}
 	}
 	return tea.Batch(cmds...)
@@ -141,7 +143,7 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, width, height int, options Options) Model[T] {
+func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, width int, options Options) Model[T] {
 	lis := make([]list.Item, 0)
 	m := Model[T]{
 		Delegate: delegate,
@@ -156,7 +158,7 @@ func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, width, height 
 		*m.items[iii].ParentModel = m
 	}
 	_, h, _ := term.GetSize(int(os.Stdout.Fd()))
-	m.list = list.New(lis, delegate, width, h-10)
+	m.list = list.New(lis, delegate, width, h)
 	// m.list.Paginator = paginator.New()
 	// m.list.Paginator.PerPage = 10
 	m.list.Styles = list.DefaultStyles()
