@@ -28,8 +28,8 @@ func (r rListItem) Value() *rListItem {
 
 func (r rListItem) Flatten() []rListItem {
 	accum := make([]rListItem, 0)
+	accum = append(accum, r)
 	for _, ite := range r.children {
-		accum = append(accum, ite)
 		accum = append(accum, ite.Flatten()...)
 	}
 	return accum
@@ -48,7 +48,7 @@ func (r rListItem) Find(a rListItem) int {
 			return u
 		}
 	}
-	return -1
+	return len(r.children) - 1
 }
 
 func (r rListItem) Children() []recursivelist.Indentable[rListItem] {
@@ -122,7 +122,7 @@ func (r rListItem) SetOptions(o recursivelist.Options) {
 type rListDelegate struct{}
 
 func (d rListDelegate) Height() int                               { return 1 }
-func (d rListDelegate) Spacing() int                              { return 0 }
+func (d rListDelegate) Spacing() int                              { return 1 }
 func (d rListDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
 func (d rListDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
 	i := recursivelist.NewItem[rListItem](listItem.(rListItem), d)
