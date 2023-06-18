@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	util "git.tablet.sh/tablet/boba/types"
+	util "git.tablet.sh/tablet/boba/utils"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
