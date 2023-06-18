@@ -103,7 +103,7 @@ func (d rListDelegate) Render(w io.Writer, m list.Model, index int, listItem lis
 		}
 	}
 	s += "" + i.Value().Name
-	indento := i.Value().Lvl() * 1
+	indento := i.Value().Lvl() * 3
 	fn := styles.DefaultStyles.Text.Copy().Padding(0, 0, 0, indento).Render
 
 	if index == m.Index() {
