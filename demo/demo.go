@@ -7,7 +7,7 @@ import (
 
 	"git.tablet.sh/tablet/boba/datepicker"
 	"git.tablet.sh/tablet/boba/timepicker"
-	util "git.tablet.sh/tablet/boba/types"
+	util "git.tablet.sh/tablet/boba/utils"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
