@@ -117,10 +117,10 @@ func (m DemoModel) View() string {
 	}
 	if m.demoStarted {
 		return z.Scan(
-			lipgloss.JoinVertical(lipgloss.Center, 
-			confirmTextStyle.Render(fmt.Sprintf("demoing bubble : %s", m.choice)),
-			(*(*m.List.SelectedItem().(DemoItem).model).value).View(),
-			result,
+			lipgloss.JoinVertical(lipgloss.Center,
+				confirmTextStyle.Render(fmt.Sprintf("demoing bubble : %s", m.choice)),
+				(*(*m.List.SelectedItem().(DemoItem).model).value).View(),
+				result,
 			))
 		// )
 	} else {

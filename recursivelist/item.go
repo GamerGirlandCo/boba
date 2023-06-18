@@ -125,7 +125,7 @@ func (i *ListItem[T]) realAdd(item T, index int) {
 		Children:    &whatthefuck,
 		Parent:      i,
 	}
-	
+
 	*i.Children = append(*i.Children, listItem)
 
 	var top *T = listItem.Parent.value

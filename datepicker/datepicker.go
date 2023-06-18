@@ -141,7 +141,7 @@ type dateCell struct {
 	date     time.Time
 	selected bool
 	blank    bool
-	id string
+	id       string
 }
 
 func (d *dateCell) toggle(selected bool) {
@@ -294,12 +294,11 @@ func (m Model) View() string {
 	return lipgloss.JoinHorizontal(0.33, cal, m.help.View(m.keys))
 }
 
-
-// function to render out a calendar from the Mode 
-// @receiver m 
-// @return string 
-// @return int 
-// @return int 
+// function to render out a calendar from the Mode
+// @receiver m
+// @return string
+// @return int
+// @return int
 func (m Model) calendar() (string, int, int) {
 	s := ""
 	otherRet := 0
@@ -390,7 +389,7 @@ func makeMatrix(sel time.Time, ya int, xa int) ([][]dateCell, int, int) {
 				selected: selBool,
 				date:     myDay,
 				blank:    blankBool,
-				id: z.NewPrefix(),
+				id:       z.NewPrefix(),
 			}
 			myDay = myDay.AddDate(0, 0, 1)
 		}

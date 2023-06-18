@@ -16,13 +16,13 @@ type Theme struct {
 }
 
 type Styles struct {
-	Text             lg.Style
-	Active       lg.Style
-	Faint        lg.Style
-	Title        lg.Style
-	Border           lg.Style
-	ActiveBorder     lg.Style
-	InactiveBorder   lg.Style
+	Text           lg.Style
+	Active         lg.Style
+	Faint          lg.Style
+	Title          lg.Style
+	Border         lg.Style
+	ActiveBorder   lg.Style
+	InactiveBorder lg.Style
 }
 
 var DefaultTheme = Theme{
@@ -38,7 +38,7 @@ var DefaultTheme = Theme{
 	Border:           lg.Color("#a3fffd"),
 }
 
-var DefaultStyles = Styles {
-	Text: lg.NewStyle().Foreground(DefaultTheme.Text),
+var DefaultStyles = Styles{
+	Text:   lg.NewStyle().Foreground(DefaultTheme.Text),
 	Active: lg.NewStyle().Foreground(DefaultTheme.ActiveText).Background(DefaultTheme.ActiveBackground),
 }

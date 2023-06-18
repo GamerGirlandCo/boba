@@ -40,7 +40,6 @@ func (r rListItem) IndexWithinParent() int {
 	return 0
 }
 
-
 func (r rListItem) Lvl() int {
 	base := 0
 	par := r.parent
@@ -63,11 +62,11 @@ func (r rListItem) GetChildren() []recursivelist.ItemWrapper[rListItem] {
 	return c
 }
 func (r rListItem) TotalBeneath() int {
-  accum := len(*r.children)
-  for _, val := range *r.children {
-    accum += val.TotalBeneath()
-  }
-  return accum
+	accum := len(*r.children)
+	for _, val := range *r.children {
+		accum += val.TotalBeneath()
+	}
+	return accum
 }
 
 func (r rListItem) SetChildren(ree []recursivelist.ItemWrapper[rListItem]) {
@@ -104,11 +103,11 @@ func (d rListDelegate) Render(w io.Writer, m list.Model, index int, listItem lis
 	}
 	s += "" + i.Value().Name
 	indento := i.Value().Lvl() * 3
-	fn := styles.DefaultStyles.Text.Copy().Padding(0, 0, 0, indento).Render
+	fn := styles.DefaultStyles.Text.Copy().Margin(0, 0, 0, indento).Render
 
 	if index == m.Index() {
 		fn = func(s ...string) string {
-			return styles.DefaultStyles.Active.Copy().Padding(0, 0, 0, indento).Render(strings.Join(s, " "))
+			return styles.DefaultStyles.Active.Copy().Margin(0, 0, 0, indento).Render(strings.Join(s, " "))
 		}
 	}
 	fmt.Fprint(w, fn(s))

@@ -156,7 +156,7 @@ func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, width, height 
 		*m.items[iii].ParentModel = m
 	}
 	_, h, _ := term.GetSize(int(os.Stdout.Fd()))
-	m.list = list.New(lis, delegate, width, h - 10)
+	m.list = list.New(lis, delegate, width, h-10)
 	// m.list.Paginator = paginator.New()
 	// m.list.Paginator.PerPage = 10
 	m.list.Styles = list.DefaultStyles()
