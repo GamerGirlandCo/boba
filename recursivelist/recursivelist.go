@@ -62,11 +62,24 @@ func (m *Model[T]) SetSize(w, h int) {
 
 func (m *Model[T]) recurseAndExpand(i ListItem[T]) tea.Cmd {
 	var cmds []tea.Cmd
-	for _, ee := range m.list.Items() {
+	for _, ee := range m.List.Items() {
 		curLevel := (*ee.(ListItem[T]).value).Lvl()
 		lastLvl := (*i.Value()).Lvl()
 		if curLevel <= lastLvl {
-			ee.(ListItem[T]).Point().SetExpanded(!ee.(ListItem[T]).expanded)
+			cur := ee.(ListItem[T])
+			cur.Point().SetExpanded(!cur.expanded)
+			iwith := cur.IndexWithinParent()
+			tots := cur.TotalBeneath()
+			if !cur.expanded {
+				for ichrist := iwith; ichrist < iwith + tots + 1; ichrist++ {
+					cur.ParentModel.List.RemoveItem(ichrist)
+				}
+			} else {
+				toInsrt := cur.Flatten()
+				for m := range toInsrt {
+					cur.ParentModel.List.InsertItem(m + iwith, toInsrt[m])
+				}
+			}
 		}
 	}
 	return tea.Batch(cmds...)
