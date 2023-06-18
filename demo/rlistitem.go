@@ -13,89 +13,33 @@ import (
 
 type rListItem struct {
 	Name     string
-	children []rListItem
+	children *[]rListItem
 	parent   *rListItem
 	Options  recursivelist.Options
+}
+
+func (r rListItem) Find(a rListItem) int {
+	for u := range *r.children {
+		if (*r.children)[u].Name == a.Name {
+			return u
+		}
+	}
+	return len(*r.children) - 1
 }
 
 func (r rListItem) FilterValue() string {
 	return r.Name
 }
 
-func (r rListItem) Value() *rListItem {
-	return &r
-}
-
-func (r rListItem) Flatten() []rListItem {
-	accum := make([]rListItem, 0)
-	accum = append(accum, r)
-	for _, ite := range r.children {
-		accum = append(accum, ite.Flatten()...)
-	}
-	return accum
-}
-
-func (r rListItem) RModify(fnn func(rListItem)) {
-	for _, val := range r.children {
-		// val.RModify(fnn)
-		fnn(val)
-	}
-}
-
-func (r rListItem) Find(a rListItem) int {
-	for u := range r.children {
-		if (r.children)[u].Name == a.Name {
-			return u
-		}
-	}
-	return len(r.children) - 1
-}
-
-func (r rListItem) Children() []recursivelist.Indentable[rListItem] {
-	ret := make([]recursivelist.Indentable[rListItem], 0)
-	for _, i := range r.children {
-		ret = append(ret, i)
-	}
-	return ret
-}
-
-func (r rListItem) Parent() *rListItem {
-	return r.parent
-}
-
-func (r rListItem) TotalBeneath() int {
-	accum := len(r.children)
-	for _, val := range r.children {
-		accum += val.TotalBeneath()
-	}
-	return accum
-}
-
 func (r rListItem) IndexWithinParent() int {
 	if r.parent != nil {
-		v := r.parent.Find(r)
-		return v
+		v := r.parent
+		return (v.Find(r))
 	}
 
 	return 0
 }
 
-func (r rListItem) Add(ra rListItem) {
-	vee := &r
-	vee.RealAdd(ra)
-}
-
-func (r *rListItem) RealAdd(ra rListItem) {
-	ra.parent = r
-	r.children = append(r.children, ra)
-	ra.parent = r
-}
-
-func (r rListItem) AddMulti(ra ...rListItem) {
-	for _, val := range ra {
-		r.Add(val)
-	}
-}
 
 func (r rListItem) Lvl() int {
 	base := 0
@@ -107,16 +51,36 @@ func (r rListItem) Lvl() int {
 	return base
 }
 
-func (r rListItem) ParentOptions() recursivelist.Options {
-	return r.Options
+func (r rListItem) GetParent() *rListItem {
+	return r.parent
 }
 
-func (r rListItem) SetOptions(o recursivelist.Options) {
-	*&r.Options = o
-	for _, rack := range r.children {
-		rack.Options = o
-		rack.SetOptions(o)
+func (r rListItem) GetChildren() []recursivelist.ItemWrapper[rListItem] {
+	var c []recursivelist.ItemWrapper[rListItem]
+	for _, val := range *r.children {
+		c = append(c, recursivelist.NewItem[rListItem](val, rListDelegate{}).Value())
 	}
+	return c
+}
+func (r rListItem) TotalBeneath() int {
+  accum := len(*r.children)
+  for _, val := range *r.children {
+    accum += val.TotalBeneath()
+  }
+  return accum
+}
+
+func (r rListItem) SetChildren(ree []recursivelist.ItemWrapper[rListItem]) {
+	choild := make([]rListItem, 0)
+	for _, val := range ree {
+		choild = append(choild, *val.Value())
+	}
+	reeo := &r
+	*reeo.children = choild
+}
+
+func (r rListItem) Value() *rListItem {
+	return &r
 }
 
 type rListDelegate struct{}
@@ -125,21 +89,21 @@ func (d rListDelegate) Height() int                               { return 1 }
 func (d rListDelegate) Spacing() int                              { return 1 }
 func (d rListDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
 func (d rListDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	i := recursivelist.NewItem[rListItem](listItem.(rListItem), d)
+	i := listItem.(recursivelist.ListItem[rListItem])
 
 	// if !ok {
 	// 	return
 	// }
 	s := ""
-	if i.Value.ParentOptions().Expandable {
+	if i.ParentModel.Options.Expandable {
 		if i.Expanded() {
-			s += i.Value.ParentOptions().OpenPrefix + " "
+			s += i.ParentModel.Options.OpenPrefix + " "
 		} else {
-			s += i.Value.ParentOptions().ClosedPrefix + " "
+			s += i.ParentModel.Options.ClosedPrefix + " "
 		}
 	}
-	s += "" + i.Value.Name
-	indento := i.Value.Lvl() * 2
+	s += "" + i.Value().Name
+	indento := i.Value().Lvl() * 1
 	fn := styles.DefaultStyles.Text.Copy().Padding(0, 0, 0, indento).Render
 
 	if index == m.Index() {

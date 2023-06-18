@@ -14,15 +14,16 @@ import (
 )
 
 type KeyMap struct {
+	list.KeyMap
 	Expand key.Binding
-	Choose      key.Binding
-	Quit        key.Binding
+	Choose key.Binding
+	Quit   key.Binding
 }
 
 var DefaultKeys KeyMap = KeyMap{
 	Expand: key.NewBinding(
-		key.WithKeys(tea.KeyCtrlQuestionMark.String()),
-		key.WithHelp("ctrl+?", "expand/collapse"),
+		key.WithKeys("/"),
+		key.WithHelp("/", "expand/collapse"),
 	),
 }
 
@@ -33,7 +34,7 @@ type Options struct {
 	Expandable   bool
 	Width        int
 	Height       int
-	Keymap KeyMap
+	Keymap       KeyMap
 }
 
 func (o *Options) SetExpandable(v bool) {
@@ -48,11 +49,11 @@ type ListOptions struct {
 	InfiniteScrolling bool
 }
 
-type Model[T Indentable[T]] struct {
+type Model[T ItemWrapper[T]] struct {
 	items    []ListItem[T]
 	Delegate list.ItemDelegate
 	list     list.Model
-	Options Options
+	Options  Options
 }
 
 func (m *Model[T]) SetSize(w, h int) {
@@ -62,9 +63,8 @@ func (m *Model[T]) SetSize(w, h int) {
 func (m *Model[T]) recurseAndExpand(i ListItem[T]) tea.Cmd {
 	var cmds []tea.Cmd
 	for _, ee := range m.list.Items() {
-		if ee.(T).Lvl() > (*i.Value).Lvl() {
+		if (*ee.(ListItem[T]).value).Lvl() > i.Value().Lvl() {
 			ee.(ListItem[T]).Point().SetExpanded(true)
-
 		}
 	}
 	return tea.Batch(cmds...)
@@ -128,7 +128,7 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.MouseMsg:
 		log.Print("it is a mouse.", msg)
 	}
-	
+
 	// for _, ra := range m.items {
 	// nlm, cmd := ra.Component.Update(msg)
 	// ra.Component = nlm
@@ -141,11 +141,12 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func New[T Indentable[T]](items []T, delegate list.ItemDelegate, width, height int) Model[T] {
+func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, width, height int, options Options) Model[T] {
 	lis := make([]list.Item, 0)
 	m := Model[T]{
 		Delegate: delegate,
 		items:    []ListItem[T]{},
+		Options:  options,
 	}
 	for iii, it := range items {
 		lis = append(lis, it)
