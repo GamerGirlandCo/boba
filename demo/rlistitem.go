@@ -15,7 +15,6 @@ type rListItem struct {
 	Name     string
 	children *[]rListItem
 	parent   *rListItem
-	Options  recursivelist.Options
 }
 
 func (r *rListItem) realAdd(ra rListItem) {

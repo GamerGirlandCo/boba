@@ -49,19 +49,12 @@ func genRandList(par *rListItem, deleg list.ItemDelegate, maxDepth int, curDepth
 	for i := 0; i < rand.Intn(10)+1; i++ {
 		sts := []recursivelist.ListItem[rListItem]{}
 		fuckery := make([]rListItem, 0)
-		var oooooo recursivelist.Options
-		if par != nil {
-			oooooo = par.Options
-		} else {
-			oooooo = MyOptions
-		}
 		cri := rListItem{
 			Name:     lor.Word(),
 			parent:   par,
-			Options:  oooooo,
 			children: &[]rListItem{},
 		}
-		
+
 		cv := recursivelist.NewItem(cri, deleg)
 		if curDepth <= maxDepth {
 			curDepth++
