@@ -1,4 +1,4 @@
-package types
+package utils
 
 import (
 	"reflect"
@@ -35,3 +35,15 @@ func FindField(val interface{}, name string) (*reflect.Value, int) {
 	fv := reflect.ValueOf(nil)
 	return &fv, retI
 }
+
+
+
+func FieldByName(val interface{}, name string) (reflect.Value, reflect.Type) {
+	// var retI int = -1
+	// fields := reflect.TypeOf(val)
+	values := reflect.ValueOf(val)
+	fav := reflect.Indirect(values).FieldByName(name)
+	// fff := reflect.TypeOf(fav)
+	return fav, fav.Type()
+}
+
