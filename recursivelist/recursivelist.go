@@ -8,7 +8,6 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
 	"golang.org/x/term"
 	// lg "github.com/charmbracelet/lipgloss"
@@ -157,8 +156,8 @@ func New[T Indentable[T]](items []T, delegate list.ItemDelegate, width, height i
 	}
 	_, h, _ := term.GetSize(int(os.Stdout.Fd()))
 	m.list = list.New(lis, delegate, width, h - 10)
-	m.list.Paginator = paginator.New()
-	m.list.Paginator.PerPage = 10
+	// m.list.Paginator = paginator.New()
+	// m.list.Paginator.PerPage = 10
 	m.list.Styles = list.DefaultStyles()
 	m.list.SetFilteringEnabled(false)
 	// m.list.InfiniteScrolling = true
