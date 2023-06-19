@@ -119,7 +119,7 @@ func (m *Model[T]) Flatten() tea.Cmd {
 }
 
 func (i Model[T]) Init() tea.Cmd {
-	return tea.Sequence(tea.EnterAltScreen, i.Flatten())
+	return tea.Sequence(i.Flatten())
 }
 
 func (m Model[T]) View() string {
@@ -159,7 +159,7 @@ func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, options Option
 	}
 	for iii, it := range items {
 		lis = append(lis, it)
-		ni := NewItem(it, delegate, options, m)
+		ni := NewItem(it, m)
 		*ni.ParentModel = m
 		m.items = append(m.items, ni)
 		*m.items[iii].ParentModel = m
