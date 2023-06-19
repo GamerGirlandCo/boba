@@ -9,26 +9,40 @@ import (
 
 type ListItem[T ItemWrapper[T]] struct {
 	// whether or not this item is expanded.
-	// note that you have to implement your
-	// own state management
-	// for expansion/collapsing via your delegate's
-	// `Update` function
 	expanded    *bool
+	// the raw value that this item points to
 	value       *T
 	ParentModel *Model[T]
+	// this is a recursive struct, meaning that it can
+	// have 0 or more child elements, which can have 0
+	// or more child elements, and so on
 	Children    []ListItem[T]
+	// if it is a top level item, this field will be `nil`.
 	Parent      *ListItem[T]
 }
 
 type ItemWrapper[T any] interface {
 	list.Item
+	// finds and returns the index of the child
+	// within the current element's children
 	Find(T) int
+	// should find and return the index of the 
+	// current element within its parent
 	IndexWithinParent() int
+	// should return this item's children
 	GetChildren() []T
+	// overwrites the value's children with the given argument.
 	SetChildren([]T)
+	// should return the current element's parent.
 	GetParent() *T
+	// since `value` is not exported from the `ListItem`,
+	// we need a wrapper function to access it.
 	Value() *T
+	// returns how deeply nested the current node is, as an int.
+	// i'd recommend calculating this by checking that `Parent` 
+	// is not null in a for loop.
 	Lvl() int
+	// adds an item. this triggers
 	Add(T)
 	AddMulti(...T)
 }
@@ -87,9 +101,7 @@ func (r ListItem[T]) RModify(fnn func(ListItem[T])) {
 
 func (r ListItem[T]) GetChildren() []ListItem[T] {
 	ret := make([]ListItem[T], 0)
-	for _, i := range r.Children {
-		ret = append(ret, i)
-	}
+	ret = append(ret, r.Children...)
 	return ret
 }
 
@@ -107,10 +119,7 @@ func (r ListItem[T]) TotalBeneath() int {
 }
 
 func (r ListItem[T]) IndexWithinParent() int {
-	// if r.Parent != nil {
-	// 	v := r.Parent.point()
-	// 	return (v.Find(*r.value))
-	// }
+	// you're supposed to implement this yourself...
 	return (*r.value).IndexWithinParent()
 }
 
@@ -134,8 +143,9 @@ func sliceNFind[T ItemWrapper[T]](cur []T) int {
 	return accum
 }
 
+// since go will complain about `Add()` having a pointer receiver...
 func (i *ListItem[T]) realAdd(item ListItem[T], index int) {
-
+	
 	i.Children = append(i.Children, item)
 	var top *T
 	if item.Parent != nil {
@@ -181,6 +191,7 @@ func (i *ListItem[T]) SetExpanded(v bool) tea.Cmd {
 	return tea.EnterAltScreen
 }
 
+// creates a new ListItem
 func NewItem[T ItemWrapper[T]](item T, pm Model[T]) ListItem[T] {
 	childVar := make([]ListItem[T], 0)
 	expanded := true
