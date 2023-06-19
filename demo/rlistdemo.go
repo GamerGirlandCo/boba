@@ -75,7 +75,7 @@ func genRandList(par *rListItem, deleg list.ItemDelegate, maxDepth int, curDepth
 			checked: rand.Intn(2) == 1,
 		}
 
-		cv := recursivelist.NewItem(cri, deleg, MyOptions, re)
+		cv := recursivelist.NewItem(cri, re)
 		if curDepth <= maxDepth {
 			curDepth++
 			sts, fuckery = genRandList(cv.Value(), deleg, maxDepth, curDepth, re)
