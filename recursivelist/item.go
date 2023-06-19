@@ -42,8 +42,9 @@ type ItemWrapper[T any] interface {
 	// i'd recommend calculating this by checking that `Parent` 
 	// is not null in a for loop.
 	Lvl() int
-	// adds an item. this triggers
+	// adds an element to this item's children.
 	Add(T)
+	// same as Add() but can receive more than one argument!
 	AddMulti(...T)
 }
 
