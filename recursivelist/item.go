@@ -73,11 +73,11 @@ func (r ListItem[T]) Flatten() []ListItem[T] {
 	accum = append(accum, r)
 	for _, ite := range r.Children {
 		// accum = append(accum, ite)
-		accum = append(accum, ite.Flatten()...)
-		// if *ite.expanded {
-		// } else {
-		// 	accum = append(accum, ite)
-		// }
+		if *ite.expanded {
+			accum = append(accum, ite.Flatten()...)
+		}  else {
+			accum = append(accum, ite)
+		}
 	}
 	return accum
 }
