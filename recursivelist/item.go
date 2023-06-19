@@ -10,10 +10,15 @@ import (
 )
 
 type ListItem[T ItemWrapper[T]] struct {
+	// whether or not this item is expanded.
+	// note that you have to implement your
+	// own state management
+	// for expansion/collapsing via your delegate's
+	// `Update` function
 	expanded    bool
 	value       *T
 	ParentModel *Model[T]
-	Children    *[]ListItem[T]
+	Children    []ListItem[T]
 	Parent      *ListItem[T]
 }
 
@@ -51,7 +56,7 @@ func (r *ListItem[T]) SetChildren(k []ListItem[T]) {
 		choild = append(choild, *val.value)
 	}
 	(*r.value).SetChildren(choild)
-	*r.Children = k
+	r.Children = k
 }
 
 func (r ListItem[T]) FilterValue() string {
@@ -64,19 +69,19 @@ func (r ListItem[T]) Value() *T {
 
 func (r ListItem[T]) Flatten() []ListItem[T] {
 	accum := make([]ListItem[T], 0)
-	accum = append(accum, r)
-	for _, ite := range *r.Children {
+	for _, ite := range r.Children {
 		if ite.expanded {
+			accum = append(accum, r)
+			} else {
+				accum = append(accum, r)
+			}
 			accum = append(accum, ite.Flatten()...)
-		} else {
-			accum = append(accum, ite)
-		}
 	}
 	return accum
 }
 
 func (r ListItem[T]) RModify(fnn func(ListItem[T])) {
-	for _, val := range *r.Children {
+	for _, val := range r.Children {
 		// val.RModify(fnn)
 		fnn(val)
 	}
@@ -84,7 +89,7 @@ func (r ListItem[T]) RModify(fnn func(ListItem[T])) {
 
 func (r ListItem[T]) GetChildren() []ListItem[T] {
 	ret := make([]ListItem[T], 0)
-	for _, i := range *r.Children {
+	for _, i := range r.Children {
 		ret = append(ret, i)
 	}
 	return ret
@@ -95,21 +100,31 @@ func (r ListItem[T]) GetParent() *ListItem[T] {
 }
 
 func (r ListItem[T]) TotalBeneath() int {
-	if r.Parent != nil {
-		v := r.Parent.point()
-		return (v.Find(*r.value))
+	accum := len(r.Children)
+	for _, val := range r.Children {
+		accum += val.TotalBeneath()
 	}
-
-	return 0
+	return accum
 }
 
 func (r ListItem[T]) IndexWithinParent() int {
-	if r.Parent != nil {
-		v := r.Parent.point()
-		return (v.Find(*r.value))
-	}
-
+	// if r.Parent != nil {
+	// 	v := r.Parent.point()
+	// 	return (v.Find(*r.value))
+	// }
+	// return (*r.value).IndexWithinParent()
 	return 0
+}
+
+func (r ListItem[T]) everythingBefore() int {
+	a := 0
+	top := r.Parent
+	for top != nil {
+		a++
+		a += top.IndexWithinParent()
+		top = (*top).Parent
+	}
+	return a
 }
 
 func sliceNFind[T ItemWrapper[T]](cur []T) int {
@@ -123,13 +138,13 @@ func sliceNFind[T ItemWrapper[T]](cur []T) int {
 
 func (i *ListItem[T]) realAdd(item ListItem[T], index int) {
 
-	*i.Children = append(*i.Children, item)
-
+	i.Children = append(i.Children, item)
 	var top *T
 	if item.Parent != nil {
 		top = item.Parent.value
 	}
-	accum := item.IndexWithinParent()
+	item.ParentModel = i.ParentModel
+	accum := item.everythingBefore()
 	for top != nil {
 		iwi := (*top).IndexWithinParent()
 		if iwi >= 0 {
@@ -146,7 +161,7 @@ func (i *ListItem[T]) realAdd(item ListItem[T], index int) {
 
 		top = (*top).GetParent()
 	}
-	i.ParentModel.list.InsertItem(accum+index, item)
+	i.ParentModel.List.InsertItem(accum+index, item)
 }
 
 func (i ListItem[T]) Add(item ListItem[T], index int) {
@@ -165,22 +180,23 @@ func (i *ListItem[T]) SetExpanded(v bool) tea.Cmd {
 	if i.ParentModel.Options.Expandable {
 		i.expanded = v
 	}
-	if !v {
-		for ii := 0; ii < i.TotalBeneath(); ii++ {
-			i.ParentModel.list.RemoveItem(ii)
-		}
-	}
 	return nil
 }
 
-func NewItem[T ItemWrapper[T]](item T, del list.ItemDelegate) ListItem[T] {
+func NewItem[T ItemWrapper[T]](item T, del list.ItemDelegate, opts Options) ListItem[T] {
 	childVar := make([]ListItem[T], 0)
-	li := ListItem[T]{
-		value:       &item,
-		ParentModel: &Model[T]{},
-		expanded:    true,
-		Children:    &childVar,
+	var thing Options = opts
+	if thing.ClosedPrefix == "" || thing.OpenPrefix == "" || thing.Width == 0 || thing.Height == 0 {
+		thing = DefaultOptions
 	}
-	li.ParentModel.list = list.New([]list.Item{}, del, 200, 200)
+	li := ListItem[T]{
+		value: &item,
+		ParentModel: &Model[T]{
+			Options: thing,
+		},
+		expanded: true,
+		Children: childVar,
+	}
+	li.ParentModel.List = list.New([]list.Item{}, del, 200, 200)
 	return li
 }

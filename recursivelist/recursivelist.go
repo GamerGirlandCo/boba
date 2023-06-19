@@ -37,6 +37,15 @@ type Options struct {
 	Keymap       KeyMap
 }
 
+var DefaultOptions Options = Options{
+	ClosedPrefix: ">",
+	OpenPrefix:   "⌵",
+	Width:        600,
+	Height:       250,
+	Expandable:   true,
+	Keymap:       DefaultKeys,
+}
+
 func (o *Options) SetExpandable(v bool) {
 	o.Expandable = v
 }
@@ -52,12 +61,12 @@ type ListOptions struct {
 type Model[T ItemWrapper[T]] struct {
 	items    []ListItem[T]
 	Delegate list.ItemDelegate
-	list     list.Model
+	List     list.Model
 	Options  Options
 }
 
 func (m *Model[T]) SetSize(w, h int) {
-	m.list.SetSize(w, h)
+	m.List.SetSize(w, h)
 }
 
 func (m *Model[T]) recurseAndExpand(i ListItem[T]) tea.Cmd {
@@ -104,8 +113,8 @@ func (m *Model[T]) Flatten() tea.Cmd {
 		}
 	}
 	lak := []tea.Cmd{
-		// m.list.SetItems([]list.Item{}),
-		m.list.SetItems(accum),
+		// m.List.SetItems([]List.Item{}),
+		m.List.SetItems(accum),
 	}
 	return tea.Batch(lak...)
 }
@@ -125,7 +134,7 @@ func (m Model[T]) View() string {
 	// 		sb.WriteString("\n")
 	// 		sb.WriteString(val.View())
 	// }
-	lak := m.list.View()
+	lak := m.List.View()
 	// fmt.Println(lak)
 	return lak
 }
@@ -133,10 +142,12 @@ func (m Model[T]) View() string {
 func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.List.SetSize(msg.Width, msg.Height)
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, m.Options.Keymap.Expand):
-			blip := m.list.SelectedItem().(ListItem[T])
+			blip := m.List.SelectedItem().(ListItem[T])
 			blip.expanded = !blip.expanded
 			cmds = append(cmds, m.recurseAndExpand(blip))
 		}
@@ -149,14 +160,14 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// ra.Component = nlm
 	// }
 	cmds = append(cmds, m.Flatten())
-	nlm, cmd := m.list.Update(msg)
-	m.list = nlm
+	nlm, cmd := m.List.Update(msg)
+	m.List = nlm
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
 }
 
-func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, width int, options Options) Model[T] {
+func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, options Options) Model[T] {
 	lis := make([]list.Item, 0)
 	m := Model[T]{
 		Delegate: delegate,
@@ -165,18 +176,18 @@ func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, width int, opt
 	}
 	for iii, it := range items {
 		lis = append(lis, it)
-		ni := NewItem(it, delegate)
+		ni := NewItem(it, delegate, options)
 		*ni.ParentModel = m
 		m.items = append(m.items, ni)
 		*m.items[iii].ParentModel = m
 	}
 	_, h, _ := term.GetSize(int(os.Stdout.Fd()))
-	m.list = list.New(lis, delegate, width, h)
-	// m.list.Paginator = paginator.New()
-	// m.list.Paginator.PerPage = 10
-	m.list.Styles = list.DefaultStyles()
-	m.list.SetFilteringEnabled(false)
-	// m.list.InfiniteScrolling = true
+	m.List = list.New(lis, delegate, 0, h)
+	// m.List.Paginator = paginator.New()
+	// m.List.Paginator.PerPage = 10
+	m.List.Styles = list.DefaultStyles()
+	m.List.SetFilteringEnabled(false)
+	// m.List.InfiniteScrolling = true
 	m.Flatten()
 	return m
 }
