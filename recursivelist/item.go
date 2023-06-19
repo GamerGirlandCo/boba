@@ -16,7 +16,7 @@ type ListItem[T ItemWrapper[T]] struct {
 	// own state management
 	// for expansion/collapsing via your delegate's
 	// `Update` function
-	expanded    bool
+	expanded    *bool
 	value       *T
 	ParentModel *Model[T]
 	Children    []ListItem[T]
@@ -64,7 +64,7 @@ func (r ListItem[T]) FilterValue() string {
 	return (*r.value).FilterValue()
 }
 
-func (r ListItem[T]) Value() *T {
+func (r *ListItem[T]) Value() *T {
 	return r.value
 }
 
@@ -74,10 +74,11 @@ func (r ListItem[T]) Flatten() []ListItem[T] {
 	for _, ite := range r.Children {
 		// accum = append(accum, ite)
 		accum = append(accum, ite.Flatten()...)
+		// if *ite.expanded {
+		// } else {
+		// 	accum = append(accum, ite)
+		// }
 	}
-	// for _, fu := range accum {
-		// log.Print(fu.FilterValue())
-	// }
 	return accum
 }
 
@@ -101,8 +102,9 @@ func (r ListItem[T]) GetParent() *ListItem[T] {
 }
 
 func (r ListItem[T]) TotalBeneath() int {
-	accum := len(r.Children)
+	accum := 0
 	for _, val := range r.Children {
+		accum += 1
 		accum += val.TotalBeneath()
 	}
 	return accum
@@ -113,12 +115,12 @@ func (r ListItem[T]) IndexWithinParent() int {
 	// 	v := r.Parent.point()
 	// 	return (v.Find(*r.value))
 	// }
-	// return (*r.value).IndexWithinParent()
-	return 0
+	return (*r.value).IndexWithinParent()
+	// return 0
 }
 
 func (r ListItem[T]) everythingBefore() int {
-	a := 0
+	a := 1
 	top := r.Parent
 	for top != nil {
 		a++
@@ -170,7 +172,7 @@ func (i ListItem[T]) Add(item ListItem[T], index int) {
 }
 
 func (i ListItem[T]) Expanded() bool {
-	return i.expanded
+	return *i.expanded
 }
 
 func (i ListItem[T]) Point() *ListItem[T] {
@@ -179,25 +181,26 @@ func (i ListItem[T]) Point() *ListItem[T] {
 
 func (i *ListItem[T]) SetExpanded(v bool) tea.Cmd {
 	if i.ParentModel.Options.Expandable {
-		i.expanded = v
+		*i.expanded = v
 	}
-	return nil
+	return tea.EnterAltScreen
 }
 
-func NewItem[T ItemWrapper[T]](item T, del list.ItemDelegate, opts Options) ListItem[T] {
+func NewItem[T ItemWrapper[T]](item T, del list.ItemDelegate, opts Options, pm Model[T]) ListItem[T] {
 	childVar := make([]ListItem[T], 0)
 	var thing Options = opts
 	if thing.ClosedPrefix == "" || thing.OpenPrefix == "" || thing.Width == 0 || thing.Height == 0 {
 		thing = DefaultOptions
 	}
+	expanded := true
 	li := ListItem[T]{
 		value: &item,
 		ParentModel: &Model[T]{
 			Options: thing,
 		},
-		expanded: true,
 		Children: childVar,
+		expanded: &expanded,
 	}
-	li.ParentModel.List = list.New([]list.Item{}, del, 200, 200)
+	*li.ParentModel = pm
 	return li
 }

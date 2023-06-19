@@ -69,28 +69,27 @@ func (m *Model[T]) SetSize(w, h int) {
 	m.List.SetSize(w, h)
 }
 
-func (m *Model[T]) recurseAndExpand(i ListItem[T]) tea.Cmd {
+func (m *Model[T]) recurseAndExpand(i ListItem[T], currentState bool) tea.Cmd {
 	var cmds []tea.Cmd
-	for _, ee := range m.List.Items() {
-		curLevel := (*ee.(ListItem[T]).value).Lvl()
-		lastLvl := (*i.Value()).Lvl()
-		if curLevel <= lastLvl {
-			cur := ee.(ListItem[T])
-			cur.Point().SetExpanded(!cur.expanded)
-			iwith := cur.IndexWithinParent()
-			tots := cur.TotalBeneath()
-			if !cur.expanded {
-				for ichrist := iwith; ichrist < iwith + tots + 1; ichrist++ {
-					cur.ParentModel.List.RemoveItem(ichrist)
-				}
-			} else {
-				toInsrt := cur.Flatten()
-				for m := range toInsrt {
-					cur.ParentModel.List.InsertItem(m + iwith, toInsrt[m])
-				}
-			}
+	cur := m.List.SelectedItem().(ListItem[T])
+	// cur.Point().SetExpanded(!cur.expanded)
+	iwith := m.List.Index()
+	tots := cur.TotalBeneath() + 1
+	if !currentState {
+		for wtf := 0; wtf < tots; wtf++ {
+			m.List.RemoveItem(wtf + iwith)
+		}
+	} else {
+		toInsrt := cur.Flatten()
+		// m.List.RemoveItem(iwith)
+		for ma := range toInsrt {
+			cmds = append(cmds, m.List.InsertItem(ma+iwith+1, toInsrt[ma]))
 		}
 	}
+	i.SetExpanded(currentState)
+	m.List.SetShowPagination(true)
+	cmds = append(cmds, m.List.SetItem(m.List.Index(), i))
+	// m.List.Select(0)
 	return tea.Batch(cmds...)
 }
 
@@ -108,8 +107,12 @@ func (m *Model[T]) Flatten() tea.Cmd {
 	accum := make([]list.Item, 0)
 	for _, ite := range m.items {
 		ite.ParentModel = m
-		for _, b := range ite.Flatten() {
-			accum = append(accum, b)
+		if *ite.expanded {
+			for _, b := range ite.Flatten() {
+				accum = append(accum, b)
+			}
+		} else {
+			accum = append(accum, ite)
 		}
 	}
 	lak := []tea.Cmd{
@@ -120,22 +123,11 @@ func (m *Model[T]) Flatten() tea.Cmd {
 }
 
 func (i Model[T]) Init() tea.Cmd {
-	// return tea.EnterAltScreen
 	return tea.Sequence(tea.EnterAltScreen, i.Flatten())
 }
 
 func (m Model[T]) View() string {
-	// sb := strings.Builder{}
-	// var np int = 0
-	// for _, val := range *i.children {
-	// 	nesto := val.findIndent(&np) * 2
-	// 	indStyle := lg.NewStyle().Padding(0, 0, 0, nesto)
-
-	// 		sb.WriteString("\n")
-	// 		sb.WriteString(val.View())
-	// }
 	lak := m.List.View()
-	// fmt.Println(lak)
 	return lak
 }
 
@@ -148,8 +140,8 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, m.Options.Keymap.Expand):
 			blip := m.List.SelectedItem().(ListItem[T])
-			blip.expanded = !blip.expanded
-			cmds = append(cmds, m.recurseAndExpand(blip))
+			log.Print("curso", blip)
+			cmds = append(cmds, m.recurseAndExpand(blip, !*blip.expanded))
 		}
 	case tea.MouseMsg:
 		log.Print("it is a mouse.", msg)
@@ -176,18 +168,30 @@ func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, options Option
 	}
 	for iii, it := range items {
 		lis = append(lis, it)
-		ni := NewItem(it, delegate, options)
+		ni := NewItem(it, delegate, options, m)
 		*ni.ParentModel = m
 		m.items = append(m.items, ni)
 		*m.items[iii].ParentModel = m
 	}
 	_, h, _ := term.GetSize(int(os.Stdout.Fd()))
-	m.List = list.New(lis, delegate, 0, h)
+	m.List = list.New(lis, delegate, 0, h-4)
 	// m.List.Paginator = paginator.New()
 	// m.List.Paginator.PerPage = 10
 	m.List.Styles = list.DefaultStyles()
 	m.List.SetFilteringEnabled(false)
+	m.List.InfiniteScrolling = true
 	// m.List.InfiniteScrolling = true
+	// var defFilter list.FilterFunc = list.FilterFunc(func(un string, uno []string) []list.Rank {
+	// 	var ret []list.Rank
+	// 	for i := range uno {
+	// 		ret = append(ret, list.Rank{
+	// 			Index: i,
+	// 			MatchedIndexes: []int {0},
+	// 		})
+	// 	}
+	// 	return ret
+	// })
+	// m.List.Filter = defFilter
 	m.Flatten()
 	return m
 }
