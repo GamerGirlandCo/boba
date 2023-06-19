@@ -15,6 +15,7 @@ type rListItem struct {
 	Name     string
 	children *[]rListItem
 	parent   *rListItem
+	checked bool
 }
 
 func (r *rListItem) realAdd(ra rListItem) {
@@ -85,11 +86,15 @@ func (r rListItem) TotalBeneath() int {
 }
 
 func (r rListItem) SetChildren(ree []rListItem) {
-	r.children = &ree
+	*&r.children = &ree
 }
 
 func (r rListItem) Value() *rListItem {
 	return &r
+}
+
+func (r *rListItem) Toggle() {
+	r.checked = !r.checked
 }
 
 type rListDelegate struct{}
@@ -104,24 +109,33 @@ func (d rListDelegate) Render(w io.Writer, m list.Model, index int, listItem lis
 	// 	return
 	// }
 	s := ""
+	cbox := ""
+	if i.Value().checked {
+		cbox = " [✓]"
+	} else {		
+		cbox = " [ ]"
+	}
 	if i.ParentModel.Options.Expandable {
-		if i.Expanded() {
-			s += i.ParentModel.Options.OpenPrefix + " "
-		} else {
-			s += i.ParentModel.Options.ClosedPrefix + " "
+		if len(i.Children) > 0 {
+			if i.Expanded() {
+				s += " " + i.ParentModel.Options.OpenPrefix + " "
+			} else {
+				s += " " + i.ParentModel.Options.ClosedPrefix + " "
+			}
 		}
 	}
-	s += "" + i.Value().Name
+	s += cbox + " " + i.Value().Name
 	indento := i.Value().Lvl() * 3
 	fn := styles.DefaultStyles.Text.Copy().
 		Width(i.ParentModel.Options.Width).
-		PaddingLeft(indento).Render
+		MarginLeft(indento).Render
 
 	if index == m.Index() {
 		fn = func(s ...string) string {
 			return styles.DefaultStyles.Active.Copy().
-				PaddingLeft(indento).
-				Render(strings.Join(s, " "))
+				Width(i.ParentModel.Options.Width).
+				MarginLeft(indento).
+				Render(strings.Join(s, ""))
 		}
 	}
 	fmt.Fprint(w, fn(s))
