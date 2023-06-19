@@ -1,9 +1,6 @@
 package recursivelist
 
 import (
-	// "fmt"
-
-	// "log"
 	"math"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -72,7 +69,6 @@ func (r ListItem[T]) Flatten() []ListItem[T] {
 	accum := make([]ListItem[T], 0)
 	accum = append(accum, r)
 	for _, ite := range r.Children {
-		// accum = append(accum, ite)
 		if *ite.expanded {
 			accum = append(accum, ite.Flatten()...)
 		}  else {
@@ -116,7 +112,6 @@ func (r ListItem[T]) IndexWithinParent() int {
 	// 	return (v.Find(*r.value))
 	// }
 	return (*r.value).IndexWithinParent()
-	// return 0
 }
 
 func (r ListItem[T]) everythingBefore() int {
