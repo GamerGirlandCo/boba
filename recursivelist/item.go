@@ -186,18 +186,12 @@ func (i *ListItem[T]) SetExpanded(v bool) tea.Cmd {
 	return tea.EnterAltScreen
 }
 
-func NewItem[T ItemWrapper[T]](item T, del list.ItemDelegate, opts Options, pm Model[T]) ListItem[T] {
+func NewItem[T ItemWrapper[T]](item T, pm Model[T]) ListItem[T] {
 	childVar := make([]ListItem[T], 0)
-	var thing Options = opts
-	if thing.ClosedPrefix == "" || thing.OpenPrefix == "" || thing.Width == 0 || thing.Height == 0 {
-		thing = DefaultOptions
-	}
 	expanded := true
 	li := ListItem[T]{
 		value: &item,
-		ParentModel: &Model[T]{
-			Options: thing,
-		},
+		ParentModel: &Model[T]{},
 		Children: childVar,
 		expanded: &expanded,
 	}
