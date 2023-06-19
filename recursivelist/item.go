@@ -3,7 +3,7 @@ package recursivelist
 import (
 	// "fmt"
 
-	"log"
+	// "log"
 	"math"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -75,9 +75,9 @@ func (r ListItem[T]) Flatten() []ListItem[T] {
 		// accum = append(accum, ite)
 		accum = append(accum, ite.Flatten()...)
 	}
-	for _, fu := range accum {
-		log.Print(fu.FilterValue())
-	}
+	// for _, fu := range accum {
+		// log.Print(fu.FilterValue())
+	// }
 	return accum
 }
 
