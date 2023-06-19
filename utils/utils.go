@@ -47,3 +47,11 @@ func FieldByName(val interface{}, name string) (reflect.Value, reflect.Type) {
 	return fav, fav.Type()
 }
 
+func EqualIndex(a []interface{}, b interface{}) int {
+	for i := range a {
+		if reflect.DeepEqual(a[i], b) {
+			return i
+		}
+	}
+	return -1
+}
