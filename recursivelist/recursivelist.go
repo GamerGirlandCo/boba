@@ -72,7 +72,6 @@ func (m *Model[T]) SetSize(w, h int) {
 func (m *Model[T]) recurseAndExpand(i ListItem[T], currentState bool) tea.Cmd {
 	var cmds []tea.Cmd
 	cur := m.List.SelectedItem().(ListItem[T])
-	// cur.Point().SetExpanded(!cur.expanded)
 	iwith := m.List.Index()
 	tots := cur.TotalBeneath() + 1
 	if !currentState {
@@ -81,7 +80,6 @@ func (m *Model[T]) recurseAndExpand(i ListItem[T], currentState bool) tea.Cmd {
 		}
 	} else {
 		toInsrt := cur.Flatten()
-		// m.List.RemoveItem(iwith)
 		for ma := range toInsrt {
 			cmds = append(cmds, m.List.InsertItem(ma+iwith+1, toInsrt[ma]))
 		}
@@ -89,7 +87,6 @@ func (m *Model[T]) recurseAndExpand(i ListItem[T], currentState bool) tea.Cmd {
 	i.SetExpanded(currentState)
 	m.List.SetShowPagination(true)
 	cmds = append(cmds, m.List.SetItem(m.List.Index(), i))
-	// m.List.Select(0)
 	return tea.Batch(cmds...)
 }
 
@@ -116,7 +113,6 @@ func (m *Model[T]) Flatten() tea.Cmd {
 		}
 	}
 	lak := []tea.Cmd{
-		// m.List.SetItems([]List.Item{}),
 		m.List.SetItems(accum),
 	}
 	return tea.Batch(lak...)
@@ -146,11 +142,6 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.MouseMsg:
 		log.Print("it is a mouse.", msg)
 	}
-
-	// for _, ra := range m.items {
-	// nlm, cmd := ra.Component.Update(msg)
-	// ra.Component = nlm
-	// }
 	cmds = append(cmds, m.Flatten())
 	nlm, cmd := m.List.Update(msg)
 	m.List = nlm
@@ -175,23 +166,9 @@ func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, options Option
 	}
 	_, h, _ := term.GetSize(int(os.Stdout.Fd()))
 	m.List = list.New(lis, delegate, 0, h-4)
-	// m.List.Paginator = paginator.New()
-	// m.List.Paginator.PerPage = 10
 	m.List.Styles = list.DefaultStyles()
 	m.List.SetFilteringEnabled(false)
 	m.List.InfiniteScrolling = true
-	// m.List.InfiniteScrolling = true
-	// var defFilter list.FilterFunc = list.FilterFunc(func(un string, uno []string) []list.Rank {
-	// 	var ret []list.Rank
-	// 	for i := range uno {
-	// 		ret = append(ret, list.Rank{
-	// 			Index: i,
-	// 			MatchedIndexes: []int {0},
-	// 		})
-	// 	}
-	// 	return ret
-	// })
-	// m.List.Filter = defFilter
 	m.Flatten()
 	return m
 }
