@@ -7,8 +7,10 @@ import (
 
 	"git.tablet.sh/tablet/boba/recursivelist"
 	"git.tablet.sh/tablet/boba/styles"
+	"git.tablet.sh/tablet/boba/utils"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"golang.org/x/exp/slices"
 )
 
 type rListItem struct {
