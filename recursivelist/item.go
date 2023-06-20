@@ -49,7 +49,7 @@ type ItemWrapper[T any] interface {
 	Add(int, T)
 	// same as Add() but can receive more than one argument!
 	AddMulti(int, ...T)
-	// Removes child at specified index
+	// Removes child at specified index and returns it
 	Remove(int) T
 }
 
