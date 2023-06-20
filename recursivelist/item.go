@@ -53,17 +53,6 @@ type ItemWrapper[T any] interface {
 	Remove(int) T
 }
 
-type IIndentable[T ItemWrapper[T]] interface {
-	list.Item
-	FilterValue() string
-	Flatten() []ListItem[T]
-	RModify(func(T))
-	Value() *T
-	ParentOptions() Options
-	SetOptions(Options)
-	TotalBeneath() int
-}
-
 func (r ListItem[T]) point() T {
 	return *r.value
 }
