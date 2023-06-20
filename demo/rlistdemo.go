@@ -2,12 +2,8 @@ package demo
 
 import (
 	"math/rand"
-
-	// "reflect"
-
 	"git.tablet.sh/tablet/boba/recursivelist"
 	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/go-loremipsum/loremipsum"
 )
