@@ -123,7 +123,7 @@ func (m *Model[T]) AddToRoot(argument ...T) {
 	m.List.SetItems(t)
 }
 
-func (m *Model[T]) Flatten() tea.Cmd {
+func (m *Model[T]) Flatten() (tea.Cmd, []list.Item) {
 	accum := make([]list.Item, 0)
 	for _, ite := range m.items {
 		ite.ParentModel = m
@@ -138,11 +138,12 @@ func (m *Model[T]) Flatten() tea.Cmd {
 	lak := []tea.Cmd{
 		m.List.SetItems(accum),
 	}
-	return tea.Batch(lak...)
+	return tea.Batch(lak...), accum
 }
 
-func (i Model[T]) Init() tea.Cmd {
-	return tea.Sequence(i.Flatten())
+func (m Model[T]) Init() tea.Cmd {
+	cmd, toSet := m.Flatten()
+	return tea.Batch(cmd, m.List.SetItems(toSet))
 }
 
 func (m Model[T]) View() string {
@@ -165,11 +166,12 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.MouseMsg:
 		log.Print("it is a mouse.", msg)
 	}
-	cmds = append(cmds, m.Flatten())
+	// cmd, toset := m.Flatten()
+	// cmds = append(cmds, cmd)
+	// cmds = append(cmds, m.List.SetItems(toset))
 	nlm, cmd := m.List.Update(msg)
 	m.List = nlm
 	cmds = append(cmds, cmd)
-
 	return m, tea.Batch(cmds...)
 }
 
@@ -187,8 +189,8 @@ func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, options Option
 		m.items = append(m.items, ni)
 		*m.items[iii].ParentModel = m
 	}
-	_, h, _ := term.GetSize(int(os.Stdout.Fd()))
-	m.List = list.New(lis, delegate, 0, h-4)
+	wpo, h, _ := term.GetSize(int(os.Stdout.Fd()))
+	m.List = list.New(lis, delegate, wpo, h)
 	m.List.Styles = list.DefaultStyles()
 	m.List.SetFilteringEnabled(false)
 	m.List.InfiniteScrolling = true

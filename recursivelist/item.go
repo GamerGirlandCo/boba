@@ -3,6 +3,7 @@ package recursivelist
 import (
 	"math"
 
+	"git.tablet.sh/tablet/boba/utils"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -35,6 +36,8 @@ type ItemWrapper[T any] interface {
 	SetChildren([]T)
 	// should return the current element's parent.
 	GetParent() *T
+	// should set the item's parent to the argument.
+	SetParent(*T)
 	// since `value` is not exported from the `ListItem`,
 	// we need a wrapper function to access it.
 	Value() *T
@@ -43,9 +46,11 @@ type ItemWrapper[T any] interface {
 	// is not null in a for loop.
 	Lvl() int
 	// adds an element to this item's children.
-	Add(T)
+	Add(int, T)
 	// same as Add() but can receive more than one argument!
-	AddMulti(...T)
+	AddMulti(int, ...T)
+	// Removes child at specified index
+	Remove(int) T
 }
 
 type IIndentable[T ItemWrapper[T]] interface {
@@ -63,15 +68,6 @@ func (r ListItem[T]) point() T {
 	return *r.value
 }
 
-func (r *ListItem[T]) SetChildren(k []ListItem[T]) {
-	choild := make([]T, 0)
-	for _, val := range k {
-		choild = append(choild, *val.value)
-	}
-	(*r.value).SetChildren(choild)
-	r.Children = k
-}
-
 func (r ListItem[T]) FilterValue() string {
 	return (*r.value).FilterValue()
 }
@@ -83,7 +79,7 @@ func (r *ListItem[T]) Value() *T {
 func (r ListItem[T]) Flatten() []ListItem[T] {
 	accum := make([]ListItem[T], 0)
 	accum = append(accum, r)
-	for _, ite := range r.Children {
+	for _, ite := range *r.Children {
 		if *ite.expanded {
 			accum = append(accum, ite.Flatten()...)
 		}  else {
@@ -94,9 +90,10 @@ func (r ListItem[T]) Flatten() []ListItem[T] {
 }
 
 func (r ListItem[T]) RModify(fnn func(ListItem[T])) {
-	for _, val := range r.Children {
+	for _, val := range *r.Children {
 		// val.RModify(fnn)
 		fnn(val)
+		val.RModify(fnn)
 	}
 }
 
@@ -110,9 +107,14 @@ func (r ListItem[T]) GetParent() *ListItem[T] {
 	return r.Parent
 }
 
+func (r *ListItem[T]) setParent(pa *T) {
+	(*pa).SetParent(r.Parent.value)
+	*r.Parent = r.ParentModel.NewItem(*pa)
+}
+
 func (r ListItem[T]) TotalBeneath() int {
 	accum := 0
-	for _, val := range r.Children {
+	for _, val := range *r.Children {
 		accum += 1
 		accum += val.TotalBeneath()
 	}
@@ -121,7 +123,10 @@ func (r ListItem[T]) TotalBeneath() int {
 
 func (r ListItem[T]) IndexWithinParent() int {
 	// you're supposed to implement this yourself...
-	return (*r.value).IndexWithinParent()
+	if r.value != nil {
+		return (*r.value).IndexWithinParent()
+	}
+	return 0
 }
 
 func (r ListItem[T]) everythingBefore() int {
