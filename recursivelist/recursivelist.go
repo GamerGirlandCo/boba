@@ -65,6 +65,11 @@ type Model[T ItemWrapper[T]] struct {
 	Options  Options
 }
 
+
+// creates a new ListItem.
+// note that this does NOT append it to
+// m.items; you have to do that yourself 
+// with m.AddToRoot()
 func (m *Model[T]) NewItem(item T) ListItem[T] {
 	var childVar []ListItem[T]
 	// var pari *ListItem[T] = nil
