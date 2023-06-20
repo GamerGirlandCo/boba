@@ -55,3 +55,17 @@ func EqualIndex(a []interface{}, b interface{}) int {
 	}
 	return -1
 }
+
+func MaxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func MinInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
