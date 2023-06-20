@@ -140,6 +140,8 @@ func (d rListDelegate) Render(w io.Writer, m list.Model, index int, listItem lis
 			} else {
 				s += " " + i.ParentModel.Options.ClosedPrefix + " "
 			}
+		} else {
+			s += "  "
 		}
 	}
 	s += cbox + " " + i.Value().Name
