@@ -71,9 +71,9 @@ func (w WrapperModel) View() string {
 
 
 func genRandList(par *rListItem, maxDepth int, curDepth int, re recursivelist.Model[rListItem]) ([]rListItem) {
-	var lor loremipsum.LoremIpsum = *loremipsum.NewWithSeed(int64(rand.Intn(10000)))
 	retVal := make([]rListItem, 0)
 	for i := 0; i < rand.Intn(7)+1; i++ {
+		var lor loremipsum.LoremIpsum = *loremipsum.NewWithSeed(int64(rand.Intn(10000)))
 		sts := []rListItem{}
 		cri := rListItem{
 			Name:     lor.Word(),
