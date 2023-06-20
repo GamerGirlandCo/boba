@@ -19,12 +19,25 @@ var MyOptions recursivelist.Options = recursivelist.Options{
 
 type km struct {
 	Check key.Binding
+	Delete key.Binding
+	Insert key.Binding
 }
 
 var dkm km = km {
 	Check: key.NewBinding(
 		key.WithKeys("."),
 		key.WithHelp(".", "check/uncheck line"),
+	),
+	Delete:  key.NewBinding(
+		key.WithKeys("d", tea.KeyDelete.String()),
+		key.WithHelp(
+			"d/del",
+			"delete item",
+		),
+	),
+	Insert: key.NewBinding(
+		key.WithKeys("i"),
+		key.WithHelp("i", "insert item"),
 	),
 }
 
