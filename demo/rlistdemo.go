@@ -69,7 +69,7 @@ func (w WrapperModel) View() string {
 	return w.InnerValue.View()
 }
 
-var lor loremipsum.LoremIpsum = *loremipsum.NewWithSeed(1234)
+var lor loremipsum.LoremIpsum = *loremipsum.NewWithSeed(int64(rand.Intn(10000)))
 
 func genRandList(par *rListItem, maxDepth int, curDepth int, re recursivelist.Model[rListItem]) ([]rListItem) {
 	retVal := make([]rListItem, 0)
