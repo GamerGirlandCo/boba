@@ -28,6 +28,7 @@ require (
 	github.com/rickar/cal/v2 v2.1.13
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/snabb/isoweek v1.0.3
+	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 	golang.org/x/sync v0.2.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/term v0.8.0
