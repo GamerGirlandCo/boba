@@ -62,49 +62,37 @@ func (w WrapperModel) View() string {
 
 var lor loremipsum.LoremIpsum = *loremipsum.NewWithSeed(1234)
 
-func genRandList(par *rListItem, deleg list.ItemDelegate, maxDepth int, curDepth int, re recursivelist.Model[rListItem]) ([]recursivelist.ListItem[rListItem], []rListItem) {
-	retVal := make([]recursivelist.ListItem[rListItem], 0)
-	secRetVal := make([]rListItem, 0)
-	for i := 0; i < rand.Intn(10)+1; i++ {
-		sts := []recursivelist.ListItem[rListItem]{}
-		fuckery := make([]rListItem, 0)
+func genRandList(par *rListItem, maxDepth int, curDepth int, re recursivelist.Model[rListItem]) ([]rListItem) {
+	retVal := make([]rListItem, 0)
+	for i := 0; i < rand.Intn(7)+1; i++ {
+		sts := []rListItem{}
 		cri := rListItem{
 			Name:     lor.Word(),
 			parent:   par,
-			children: &[]rListItem{},
+			children: &sts,
 			checked: rand.Intn(2) == 1,
 		}
 
-		cv := recursivelist.NewItem(cri, re)
-		if curDepth <= maxDepth {
+		cv := re.NewItem(cri)
+		if curDepth < maxDepth {
 			curDepth++
-			sts, fuckery = genRandList(cv.Value(), deleg, maxDepth, curDepth, re)
+			sts = genRandList(&cri, maxDepth, curDepth, re)
 		}
-		cri.AddMulti(fuckery...)
-			cv.SetChildren(sts)
-		for ii, b := range sts {
-			pari := cv.Value()
-			(*cri.children)[ii] = *b.Value()
-			for _, c := range *cri.children {
-				c.parent = pari
-			}
-		}
-		secRetVal = append(secRetVal, *cv.Value())
-		// secRetVal = append(secRetVal, *cv.Value().children...)
-		// cv.AddMulti(cv.Value.children...)
-		retVal = append(retVal, cv)
+		// cri.
+		cv.AddMulti(i, sts...)
+		
+		retVal = append(retVal, cri)
 	}
 
-	return retVal, secRetVal
+	return retVal
 }
 
 func initRlistModel() WrapperModel {
 	MyOptions.SetExpandable(true)
-	nu := recursivelist.New[rListItem]([]rListItem{}, rListDelegate{}, MyOptions)
-	m := WrapperModel{
-		InnerValue: &nu,
-	}
-	rlisto, _ := genRandList(nil, rListDelegate{}, 6, 0, nu)
-	m.InnerValue.SetItems(rlisto)
+	nu := recursivelist.New[rListItem]([]rListItem{}, rListDelegate{},  MyOptions)
+	m := WrapperModel{}
+	kiksi := genRandList(nil, 6, 0, nu)
+	nu.AddToRoot(kiksi...)
+	m.InnerValue = &nu
 	return m
 }

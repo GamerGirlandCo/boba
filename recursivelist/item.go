@@ -16,7 +16,7 @@ type ListItem[T ItemWrapper[T]] struct {
 	// this is a recursive struct, meaning that it can
 	// have 0 or more child elements, which can have 0
 	// or more child elements, and so on
-	Children    []ListItem[T]
+	Children    *[]ListItem[T]
 	// if it is a top level item, this field will be `nil`.
 	Parent      *ListItem[T]
 }
@@ -102,7 +102,7 @@ func (r ListItem[T]) RModify(fnn func(ListItem[T])) {
 
 func (r ListItem[T]) GetChildren() []ListItem[T] {
 	ret := make([]ListItem[T], 0)
-	ret = append(ret, r.Children...)
+	ret = append(ret, *r.Children...)
 	return ret
 }
 
@@ -145,9 +145,22 @@ func sliceNFind[T ItemWrapper[T]](cur []T) int {
 }
 
 // since go will complain about `Add()` having a pointer receiver...
-func (i *ListItem[T]) realAdd(item ListItem[T], index int) {
-	
-	i.Children = append(i.Children, item)
+func (i *ListItem[T]) realAdd(arg T, index int) {
+
+	item := i.ParentModel.NewItem(arg)
+	// item.setParent(i)
+	var newChildren []ListItem[T]
+	var nindex int
+	if index >= len(*i.Children) {
+		newChildren = append(*i.Children, item)
+	} else {
+		nindex = utils.MaxInt(0, index)
+		copy(newChildren[nindex+1:], (*i.Children)[nindex:])
+		newChildren[nindex] = item
+	}
+	i.Children = &newChildren
+	nindex = utils.MaxInt(0, index)
+	(*i.value).Add(nindex, arg)
 	var top *T
 	if item.Parent != nil {
 		top = item.Parent.value
@@ -170,11 +183,19 @@ func (i *ListItem[T]) realAdd(item ListItem[T], index int) {
 
 		top = (*top).GetParent()
 	}
-	i.ParentModel.List.InsertItem(accum+index, item)
+	i.ParentModel.List.InsertItem(accum+nindex, item)
 }
 
-func (i ListItem[T]) Add(item ListItem[T], index int) {
-	(&i).realAdd(item, index)
+func (i *ListItem[T]) Add(item T, index int) {
+	(*i.value).Add(index, item)
+	i.realAdd(item, index)
+}
+
+func (i *ListItem[T]) AddMulti(index int, items ...T) {
+	(*i.Value()).AddMulti(index, items...)
+	for mi, val := range items {
+		i.Add(val, index + mi + 1)
+	}
 }
 
 func (i ListItem[T]) Expanded() bool {
@@ -190,18 +211,4 @@ func (i *ListItem[T]) SetExpanded(v bool) tea.Cmd {
 		*i.expanded = v
 	}
 	return tea.EnterAltScreen
-}
-
-// creates a new ListItem
-func NewItem[T ItemWrapper[T]](item T, pm Model[T]) ListItem[T] {
-	childVar := make([]ListItem[T], 0)
-	expanded := true
-	li := ListItem[T]{
-		value: &item,
-		ParentModel: &Model[T]{},
-		Children: childVar,
-		expanded: &expanded,
-	}
-	*li.ParentModel = pm
-	return li
 }

@@ -18,19 +18,28 @@ type rListItem struct {
 	checked bool
 }
 
-func (r *rListItem) realAdd(ra rListItem) {
+func (r *rListItem) realAdd(in int, ra rListItem) {
 	ra.parent = r
-	*r.children = append(*r.children, ra)
+	var poit []rListItem = *r.children
+	poit = slices.Insert(poit, utils.MinInt(len(poit) - 1, in), ra)
+	r.children = &poit
+	ra.parent = r
 }
 
-func (r rListItem) Add(ra rListItem) {
-	(&r).realAdd(ra)
+func (r rListItem) Add(in int, ra rListItem) {
+	(&r).realAdd(in, ra)
 }
 
-func (r rListItem) AddMulti(ra ...rListItem) {
-  for _, val := range ra {
-    r.Add(val)
+func (r rListItem) AddMulti(in int, ra ...rListItem) {
+  for li, val := range ra {
+    r.Add(utils.MaxInt(li + in - 1, 0), val)
   }
+}
+
+func (r rListItem) Remove(tr int) rListItem {
+	ret := (*r.children)[tr]
+	*r.children = slices.Delete(*r.children, tr, tr + 1)
+	return ret
 }
 
 func (r rListItem) Find(a rListItem) int {
@@ -85,6 +94,13 @@ func (r rListItem) TotalBeneath() int {
 	return accum
 }
 
+func (r *rListItem) realSetParent(what *rListItem) {
+	r.parent = what
+} 
+func (r rListItem) SetParent(what *rListItem) {
+	(&r).realSetParent(what)
+} 
+
 func (r rListItem) SetChildren(ree []rListItem) {
 	*&r.children = &ree
 }
@@ -116,7 +132,7 @@ func (d rListDelegate) Render(w io.Writer, m list.Model, index int, listItem lis
 		cbox = " [ ]"
 	}
 	if i.ParentModel.Options.Expandable {
-		if len(i.Children) > 0 {
+		if len(i.GetChildren()) > 0 {
 			if i.Expanded() {
 				s += " " + i.ParentModel.Options.OpenPrefix + " "
 			} else {

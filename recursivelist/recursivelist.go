@@ -65,6 +65,27 @@ type Model[T ItemWrapper[T]] struct {
 	Options  Options
 }
 
+func (m *Model[T]) NewItem(item T) ListItem[T] {
+	var childVar []ListItem[T]
+	// var pari *ListItem[T] = nil
+	
+	for _, val := range item.GetChildren() {
+		childVar = append(childVar, m.NewItem(val))
+	}
+	expanded := true
+	li := ListItem[T]{
+		value: &item,
+		ParentModel: m,
+		Children: &childVar,
+		expanded: &expanded,
+	}
+	// if item.GetParent() != nil {
+	// 	point := m.NewItem(*item.GetParent())
+	// 	li.Parent = &point
+	// }
+	return li
+}
+
 func (m *Model[T]) SetSize(w, h int) {
 	m.List.SetSize(w, h)
 }
@@ -87,17 +108,19 @@ func (m *Model[T]) recurseAndExpand(i ListItem[T], currentState bool) tea.Cmd {
 	i.SetExpanded(currentState)
 	m.List.SetShowPagination(true)
 	cmds = append(cmds, m.List.SetItem(m.List.Index(), i))
+	cmd, _ := m.Flatten()
+	cmds = append(cmds, cmd)
 	return tea.Batch(cmds...)
 }
 
-func (m *Model[T]) SetItems(argument []ListItem[T]) {
+func (m *Model[T]) AddToRoot(argument ...T) {
+	var lips []ListItem[T]
 	for _, mop := range argument {
-		mop.ParentModel = m
-		m.items = append(m.items, mop)
-		in := len(m.items) - 1
-		(*m).items[in] = mop
+		lips = append(lips, m.NewItem(mop))
 	}
-	m.Flatten()
+	m.items = lips
+	_, t := m.Flatten()
+	m.List.SetItems(t)
 }
 
 func (m *Model[T]) Flatten() tea.Cmd {
@@ -159,7 +182,7 @@ func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, options Option
 	}
 	for iii, it := range items {
 		lis = append(lis, it)
-		ni := NewItem(it, m)
+		ni := m.NewItem(it)
 		*ni.ParentModel = m
 		m.items = append(m.items, ni)
 		*m.items[iii].ParentModel = m
