@@ -2,6 +2,7 @@ package demo
 
 import (
 	"math/rand"
+
 	"git.tablet.sh/tablet/boba/recursivelist"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -54,6 +55,9 @@ func (w WrapperModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
+		case key.Matches(msg, w.InnerValue.Options.Keymap.Choose):
+			// _, up := w.InnerValue.Update(msg)
+			// return w, up
 		case key.Matches(msg, dkm.Check):
 			selit := w.InnerValue.List.SelectedItem().(recursivelist.ListItem[rListItem])
 			selit.Value().Toggle()
@@ -62,6 +66,7 @@ func (w WrapperModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	something, cmd := w.InnerValue.Update(msg)
 	cmds = append(cmds, cmd)
 	*w.InnerValue = something.(recursivelist.Model[rListItem])
+
 	return w, tea.Batch(cmds...)
 }
 
@@ -96,12 +101,12 @@ func genRandList(par *rListItem, maxDepth int, curDepth int, re recursivelist.Mo
 	return retVal
 }
 
-func initRlistModel() WrapperModel {
+func initRlistModel() recursivelist.Model[rListItem] {
 	MyOptions.SetExpandable(true)
 	nu := recursivelist.New[rListItem]([]rListItem{}, rListDelegate{},  MyOptions)
 	m := WrapperModel{}
 	kiksi := genRandList(nil, 6, 0, nu)
 	nu.AddToRoot(kiksi...)
 	m.InnerValue = &nu
-	return m
+	return nu
 }

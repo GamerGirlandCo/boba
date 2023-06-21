@@ -173,7 +173,7 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.Options.Keymap.Choose):
 			return m, func() tea.Msg {
 				reso := m.List.SelectedItem().(ListItem[T])
-				result := utils.GenResultMsg[T]{
+				result := utils.GenResultMsg{
 					Res: *reso.value,
 					StringRep: (*reso.value).String(),
 				}

@@ -169,7 +169,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, func() tea.Msg {
 				// if twelvhr...
 				result := m.value.Format("15:04:05")
-				return util.GenResultMsg[time.Time]{
+				return util.GenResultMsg{
 					Res: m.value,
 					StringRep: result,
 				}

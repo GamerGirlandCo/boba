@@ -24,11 +24,6 @@ var (
 type DemoItem struct {
 	text   string
 	Result *string
-	model  *ModelContainer
-}
-
-type ModelContainer struct {
-	value *tea.Model
 }
 
 func (i DemoItem) FilterValue() string { return i.text }
@@ -57,7 +52,9 @@ func (d itemDeleg) Render(w io.Writer, m list.Model, index int, listItem list.It
 type DemoModel struct {
 	List        list.Model
 	choice      string
+	choiceInd   int
 	demoStarted bool
+	items       []*tea.Model
 }
 
 func (m DemoModel) Init() tea.Cmd {
@@ -65,49 +62,25 @@ func (m DemoModel) Init() tea.Cmd {
 }
 
 func (m DemoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-	var cmd tea.Cmd
-	var anon func() = func() {
-		i, _ := m.List.SelectedItem().(DemoItem)
-		nope, cmd := (*(*i.model).value).Update(msg)
-		*(m.List.SelectedItem().(DemoItem).model) = ModelContainer{
-			value: &nope,
-		}
-		cmds = append(cmds, cmd)
-	}
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.List.SetWidth(msg.Width)
-		anon()
-
-	case tea.MouseMsg:
-		anon()
-	case tea.KeyMsg:
-		switch keypress := msg.String(); keypress {
-		case "ctrl+c", "q":
-			return m, tea.Quit
-		case "enter":
-			if !m.demoStarted {
-				m.demoStarted = true
-				cmds = append(cmds, (*m.List.SelectedItem().(DemoItem).model.value).Init())
-				m.choice = m.List.SelectedItem().(DemoItem).text
-			} else {
-				anon()
-			}
-		default:
-			anon()
-		}
-	case util.GenResultMsg[string]:
-		tea.Printf("\n---return value\n---\n [ %s ]", msg.Res)
+	case util.GenResultMsg:
+		tea.Printf("\n---\nreturn value\n---\n [ %s ]", msg.Res)
 		var i DemoItem = m.List.SelectedItem().(DemoItem)
-		*i.Result = msg.Res
+		*i.Result = msg.StringRep
 		return m, tea.Quit
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "q", "esc", "ctrl+c":
+			return m, tea.Quit
+		}
 	}
 	if !m.demoStarted {
-		m.List, cmd = m.List.Update(msg)
-		cmds = append(cmds, cmd)
+		return updateChoices(m, msg)
+	} else {
+		return updateChosen(m, msg)
 	}
-	return m, tea.Batch(cmds...)
 }
 
 func (m DemoModel) View() string {
@@ -118,18 +91,49 @@ func (m DemoModel) View() string {
 	if m.demoStarted {
 		return z.Scan(
 			lipgloss.JoinVertical(lipgloss.Center,
-				confirmTextStyle.Render(fmt.Sprintf("demoing bubble : %s", m.choice)),
-				(*(*m.List.SelectedItem().(DemoItem).model).value).View(),
+				confirmTextStyle.Render(fmt.Sprintf("demoing bubble: %s", m.choice)),
+				chosenView(m),
 				result,
 			))
 		// )
 	} else {
-		return "\n" + m.List.View()
+		return choicesView(m)
 	}
 }
 
-func Setup() DemoModel {
+func updateChoices(m DemoModel, msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "enter":
+			m.choiceInd = m.List.Cursor()
+			m.demoStarted = true
+			return m, nil
+		default:
+			taki, up := m.List.Update(msg)
+			m.List = taki
+			return m, up
+		}
+	}
+	return m, nil
+}
 
+
+func updateChosen(m DemoModel, msg tea.Msg) (tea.Model, tea.Cmd) {
+	tako, cmd := (*m.items[m.choiceInd]).Update(msg)
+	*m.items[m.choiceInd] = tako
+	return m, cmd
+}
+
+func choicesView(m DemoModel) string {
+	return "\n" + m.List.View()
+}
+
+func chosenView(m DemoModel) string {
+	return (*m.items[m.List.Cursor()]).View()
+}
+
+func Setup() DemoModel {
 	titles := []string{
 		"Date picker",
 		"Time picker",
@@ -137,24 +141,23 @@ func Setup() DemoModel {
 		"Recursive list",
 	}
 	items := make([]list.Item, len(titles))
+	var modi []*tea.Model
 	for i := range items {
-		var modi tea.Model
+		var dp tea.Model
 		switch i {
 		case 0:
-			modi = datepicker.Initialize()
+			dp = datepicker.Initialize()
 		case 1:
-			modi = timepicker.Initialize(false)
+			dp = timepicker.Initialize(false)
 		case 2:
-			modi = timepicker.Initialize(true)
+			dp = timepicker.Initialize(true)
 		case 3:
-			modi = initRlistModel()
+			dp = initRlistModel()
 		}
+		modi = append(modi, &dp)
 		var minit string = ""
 		items[i] = DemoItem{
-			text: titles[i],
-			model: &ModelContainer{
-				value: &modi,
-			},
+			text:   titles[i],
 			Result: &minit,
 		}
 	}
@@ -165,7 +168,7 @@ func Setup() DemoModel {
 	l.SetFilteringEnabled(false)
 	l.Styles.Title = titleStyle
 
-	m := DemoModel{List: l, demoStarted: false}
+	m := DemoModel{List: l, demoStarted: false, items: modi}
 
 	return m
 }
