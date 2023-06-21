@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"git.tablet.sh/tablet/boba/utils"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,16 +15,18 @@ import (
 )
 
 type KeyMap struct {
-	list.KeyMap
 	Expand key.Binding
 	Choose key.Binding
-	Quit   key.Binding
 }
 
 var DefaultKeys KeyMap = KeyMap{
 	Expand: key.NewBinding(
 		key.WithKeys("/"),
-		key.WithHelp("/", "expand/collapse"),
+		key.WithHelp("/", "expand/collapse item"),
+	),
+	Choose: key.NewBinding(
+		key.WithKeys(" ", tea.KeyEnter.String()),
+		key.WithHelp("<space>/↲", "choose item"),
 	),
 }
 
@@ -167,6 +170,15 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			blip := m.List.SelectedItem().(ListItem[T])
 			log.Print("curso", blip)
 			cmds = append(cmds, m.recurseAndExpand(blip, !*blip.expanded))
+		case key.Matches(msg, m.Options.Keymap.Choose):
+			return m, func() tea.Msg {
+				reso := m.List.SelectedItem().(ListItem[T])
+				result := utils.GenResultMsg[T]{
+					Res: *reso.value,
+					StringRep: (*reso.value).String(),
+				}
+				return result
+			}
 		}
 	case tea.MouseMsg:
 		log.Print("it is a mouse.", msg)
@@ -187,6 +199,9 @@ func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, options Option
 		items:    []ListItem[T]{},
 		Options:  options,
 	}
+	if !m.Options.Expandable {
+		m.Options.Keymap.Expand.SetEnabled(false)
+	}
 	for iii, it := range items {
 		lis = append(lis, it)
 		ni := m.NewItem(it)
@@ -199,6 +214,9 @@ func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, options Option
 	m.List.Styles = list.DefaultStyles()
 	m.List.SetFilteringEnabled(false)
 	m.List.InfiniteScrolling = true
+	m.List.AdditionalShortHelpKeys = func () []key.Binding {
+		return utils.IterKeybindings(m.Options.Keymap)
+	}
 	m.Flatten()
 	return m
 }
