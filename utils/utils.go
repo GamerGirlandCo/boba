@@ -17,8 +17,8 @@ type Capsule[T any] struct {
 	value T
 }
 
-type GenResultMsg[T any] struct {
-	Res T
+type GenResultMsg struct {
+	Res any
 	StringRep string
 }
 
