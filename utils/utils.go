@@ -3,6 +3,8 @@ package utils
 import (
 	"reflect"
 	"time"
+
+	"github.com/charmbracelet/bubbles/key"
 )
 
 type Predicate[T any] func(t T) bool
@@ -68,4 +70,19 @@ func MinInt(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func IterKeybindings(v ...interface{}) []key.Binding {
+	// kbt := reflect.TypeOf(key.NewBinding())
+	var rv []key.Binding
+	for _, i := range v {
+		f := reflect.TypeOf(i)
+		voi := reflect.ValueOf(i)
+		if voi.CanConvert(f) {
+			for j := 0; j < voi.NumField(); j++ {
+				rv = append(rv, voi.Field(j).Interface().(key.Binding))
+			}
+		}
+	}
+	return rv
 }
