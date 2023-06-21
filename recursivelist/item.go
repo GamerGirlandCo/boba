@@ -19,6 +19,8 @@ type ListItem[T ItemWrapper[T]] struct {
 	// or more child elements, and so on
 	Children    *[]ListItem[T]
 	// if it is a top level item, this field will be `nil`.
+	// otherwise contains the element that contains the
+	// current item
 	Parent      *ListItem[T]
 }
 
