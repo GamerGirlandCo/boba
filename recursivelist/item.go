@@ -53,6 +53,8 @@ type ItemWrapper[T any] interface {
 	AddMulti(int, ...T)
 	// Removes child at specified index and returns it
 	Remove(int) T
+	// Returns a string representation of this item.
+	String() string
 }
 
 func (r ListItem[T]) point() T {

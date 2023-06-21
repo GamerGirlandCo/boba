@@ -114,6 +114,10 @@ func (r rListItem) Value() *rListItem {
 	return &r
 }
 
+func (r rListItem) String() string {
+	return r.Name
+}
+
 func (r *rListItem) Toggle() {
 	r.checked = !r.checked
 }
