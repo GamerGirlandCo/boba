@@ -9,7 +9,7 @@ import (
 
 type Predicate[T any] func(t T) bool
 
-type IToString interface {
+type Stringable interface {
 	ToString() string
 }
 
@@ -19,6 +19,7 @@ type Capsule[T any] struct {
 
 type GenResultMsg[T any] struct {
 	Res T
+	StringRep string
 }
 
 type TickMsg time.Time
@@ -73,13 +74,13 @@ func MinInt(a, b int) int {
 }
 
 func IterKeybindings(v ...interface{}) []key.Binding {
-	// kbt := reflect.TypeOf(key.NewBinding())
+	kbt := reflect.ValueOf(key.NewBinding())
 	var rv []key.Binding
 	for _, i := range v {
-		f := reflect.TypeOf(i)
+		// f := reflect.TypeOf(i)
 		voi := reflect.ValueOf(i)
-		if voi.CanConvert(f) {
-			for j := 0; j < voi.NumField(); j++ {
+		for j := 0; j < voi.NumField(); j++ {
+			if voi.Field(j).Type().Name() == kbt.Type().Name() {
 				rv = append(rv, voi.Field(j).Interface().(key.Binding))
 			}
 		}
