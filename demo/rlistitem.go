@@ -40,6 +40,9 @@ func (r rListItem) AddMulti(in int, ra ...rListItem) {
 
 func (r rListItem) Remove(tr int) rListItem {
 	ret := (*r.children)[tr]
+	for i := range *(*r.children)[tr].children {
+		(*ret.children)[i].Remove(i)
+	}
 	*r.children = slices.Delete(*r.children, tr, tr + 1)
 	return ret
 }
