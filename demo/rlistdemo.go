@@ -55,13 +55,11 @@ func (w WrapperModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, w.InnerValue.Options.Keymap.Choose):
-			// _, up := w.InnerValue.Update(msg)
-			// return w, up
 		case key.Matches(msg, dkm.Check):
 			selit := w.InnerValue.List.SelectedItem().(recursivelist.ListItem[rListItem])
 			selit.Value().Toggle()
 		}
+		
 	}
 	something, cmd := w.InnerValue.Update(msg)
 	cmds = append(cmds, cmd)

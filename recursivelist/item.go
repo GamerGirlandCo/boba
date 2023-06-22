@@ -83,9 +83,8 @@ func (r ListItem[T]) Flatten() []ListItem[T] {
 }
 
 func (r ListItem[T]) RModify(fnn func(ListItem[T])) {
+	fnn(r)
 	for _, val := range *r.Children {
-		// val.RModify(fnn)
-		fnn(val)
 		val.RModify(fnn)
 	}
 }
