@@ -1,7 +1,6 @@
 package recursivelist
 
 import (
-	"math"
   "log"
 	"git.tablet.sh/tablet/boba/utils"
 	"github.com/charmbracelet/bubbles/list"
@@ -142,51 +141,28 @@ func sliceNFind[T ItemWrapper[T]](cur []T) int {
 }
 
 // since go will complain about `Add()` having a pointer receiver...
-func (i *ListItem[T]) realAdd(arg T, index int) {
+func (i *ListItem[T]) realAdd(arg T, index int) ListItem[T] {
 
 	item := i.ParentModel.NewItem(arg)
-	// item.setParent(i)
-	var newChildren []ListItem[T]
 	var nindex int
 	if index >= len(*i.Children) {
-		newChildren = append(*i.Children, item)
+		*i.Children = append(*i.Children, item)
 	} else {
 		nindex = utils.MaxInt(0, index)
-		copy(newChildren[nindex+1:], (*i.Children)[nindex:])
-		newChildren[nindex] = item
+		*i.Children = utils.SliceInsert[ListItem[T]](*i.Children, nindex, item)
 	}
 	(*i.value).Add(nindex, arg)
-	i.Children = &newChildren
-	nindex = utils.MaxInt(0, index)
-	var top *T
-	if item.Parent != nil {
-		top = item.Parent.value
-	}
+	
 	log.Print(arg, item)
 	item.ParentModel = i.ParentModel
-	accum := item.everythingBefore()
-	for top != nil {
-		iwi := (*top).IndexWithinParent()
-		if iwi >= 0 {
-			accum += iwi + 1
-			slic := int(math.Min(
-				float64(iwi),
-				float64(len((*top).GetChildren())),
-			))
-			p := (*top)
-			for _, wee := range (p).GetChildren()[0:slic] {
-				accum += sliceNFind[T](wee.GetChildren())
-			}
-		}
-
-		top = (*top).GetParent()
-	}
-	//i.ParentModel.List.InsertItem(nindex, item)
+	_, accu := item.ParentModel.Flatten()
+	item.ParentModel.List.SetItems(accu)
+	return item
 }
 
-func (i *ListItem[T]) Add(item T, index int) {
+func (i *ListItem[T]) Add(item T, index int) ListItem[T] {
 //	(*i.value).Add(index, item)
-	i.realAdd(item, index)
+	return i.realAdd(item, index)
 }
 
 func (i *ListItem[T]) AddMulti(index int, items ...T) {
