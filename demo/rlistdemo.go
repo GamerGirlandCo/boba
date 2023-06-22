@@ -79,7 +79,7 @@ var lor *loremipsum.LoremIpsum = loremipsum.New()
 func genRandList(par *rListItem, maxDepth int, curDepth int, re recursivelist.Model[rListItem]) ([]rListItem) {
   
 	retVal := make([]rListItem, 0)
-	for i := 0; i < rand.Intn(8); i++ {
+	for i := 0; i < rand.Intn(8) + 4; i++ {
 	  
 		sts := []rListItem{}
 		cri := rListItem{

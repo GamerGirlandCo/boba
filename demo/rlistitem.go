@@ -128,7 +128,7 @@ func (r *rListItem) Toggle() {
 type rListDelegate struct{}
 
 func (d rListDelegate) Height() int                               { return 1 }
-func (d rListDelegate) Spacing() int                              { return 1 }
+func (d rListDelegate) Spacing() int                              { return 0 }
 func (d rListDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
 func (d rListDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
 	i := listItem.(recursivelist.ListItem[rListItem])
