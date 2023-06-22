@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/key"
+	"golang.org/x/exp/slices"
 )
 
 type Predicate[T any] func(t T) bool
@@ -86,4 +87,8 @@ func IterKeybindings(v ...interface{}) []key.Binding {
 		}
 	}
 	return rv
+}
+
+func SliceInsert[T any](arr []T, index int, arg T) []T {
+	return slices.Insert(arr, MaxInt(MinInt(len(arr) - 1, index), 0), arg)
 }
