@@ -222,7 +222,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.Left):
 			m.cursorX--
 			if m.cursorX < 0 {
-				log.Print("y < 0")
+
 				m.cursorX = 6
 				if m.cursorY > 0 {
 					m.cursorY--
@@ -267,7 +267,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, func() tea.Msg {
 				Res := m.value.String()
 				return util.GenResultMsg{
-					Res: m.value,
+					Res:       m.value,
 					StringRep: Res,
 				}
 			}
@@ -401,7 +401,7 @@ func makeMatrix(sel time.Time, ya int, xa int) ([][]dateCell, int, int) {
 }
 
 func logPos(m Model) {
-	log.Printf("current!!! -- [%d][%d]", m.cursorY, m.cursorX)
+
 }
 
 func printGrid(d [][]dateCell) {

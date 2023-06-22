@@ -99,7 +99,7 @@ func genRandList(par *rListItem, maxDepth int, curDepth int, re recursivelist.Mo
 		cv := re.NewItem(cri)
 		if curDepth < maxDepth {
 			curDepth++
-			log.Printf("%+v", cri)
+
 			sts = genRandList(&cri, maxDepth, curDepth, re)
 		}
 		//cri.AddMulti(i, sts...)

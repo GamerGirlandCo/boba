@@ -1,26 +1,26 @@
 package recursivelist
 
 import (
-  "log"
 	"git.tablet.sh/tablet/boba/utils"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"log"
 )
 
 type ListItem[T ItemWrapper[T]] struct {
 	// whether or not this item is expanded.
-	expanded    *bool
+	expanded *bool
 	// the raw value that this item points to
 	value       *T
 	ParentModel *Model[T]
 	// this is a recursive struct, meaning that it can
 	// have 0 or more child elements, which can have 0
 	// or more child elements, and so on
-	Children    *[]ListItem[T]
+	Children *[]ListItem[T]
 	// if it is a top level item, this field will be `nil`.
 	// otherwise contains the element that contains the
 	// current item
-	Parent      *ListItem[T]
+	Parent *ListItem[T]
 }
 
 type ItemWrapper[T any] interface {
@@ -28,7 +28,7 @@ type ItemWrapper[T any] interface {
 	// finds and returns the index of the child
 	// within the current element's children
 	Find(T) int
-	// should find and return the index of the 
+	// should find and return the index of the
 	// current element within its parent
 	IndexWithinParent() int
 	// should return this item's children
@@ -43,7 +43,7 @@ type ItemWrapper[T any] interface {
 	// we need a wrapper function to access it.
 	Value() *T
 	// returns how deeply nested the current node is, as an int.
-	// i'd recommend calculating this by checking that `Parent` 
+	// i'd recommend calculating this by checking that `Parent`
 	// is not null in a for loop.
 	Lvl() int
 	// adds an element to this item's children.
@@ -74,7 +74,7 @@ func (r ListItem[T]) Flatten() []ListItem[T] {
 	for _, ite := range *r.Children {
 		if *ite.expanded {
 			accum = append(accum, ite.Flatten()...)
-		}  else {
+		} else {
 			accum = append(accum, ite)
 		}
 	}
@@ -152,8 +152,7 @@ func (i *ListItem[T]) realAdd(arg T, index int) ListItem[T] {
 		*i.Children = utils.SliceInsert[ListItem[T]](*i.Children, nindex, item)
 	}
 	(*i.value).Add(nindex, arg)
-	
-	log.Print(arg, item)
+
 	item.ParentModel = i.ParentModel
 	_, accu := item.ParentModel.Flatten()
 	item.ParentModel.List.SetItems(accu)
@@ -161,14 +160,14 @@ func (i *ListItem[T]) realAdd(arg T, index int) ListItem[T] {
 }
 
 func (i *ListItem[T]) Add(item T, index int) ListItem[T] {
-//	(*i.value).Add(index, item)
+	//	(*i.value).Add(index, item)
 	return i.realAdd(item, index)
 }
 
 func (i *ListItem[T]) AddMulti(index int, items ...T) {
 	//(*i.value).AddMulti(index, items...)
 	for mi, val := range items {
-		i.Add(val, index + mi + 1)
+		i.Add(val, index+mi+1)
 	}
 }
 

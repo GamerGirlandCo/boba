@@ -62,37 +62,34 @@ type ListOptions struct {
 }
 
 type Model[T ItemWrapper[T]] struct {
-	items    []ListItem[T]
-	List     list.Model
-	Options  Options
+	items   []ListItem[T]
+	List    list.Model
+	Options Options
 }
-
 
 // creates a new ListItem.
 // note that this does NOT append it to
-// m.items; you have to do that yourself 
+// m.items; you have to do that yourself
 // with m.AddToRoot()
 func (m *Model[T]) NewItem(item T) ListItem[T] {
 	var childVar []ListItem[T]
 	// var pari *ListItem[T] = nil
-	
+
 	for _, val := range item.GetChildren() {
 		childVar = append(childVar, m.NewItem(val))
 	}
-	log.Print("gcgcgf")
-	log.Print(item.GetChildren())
 	litem := &item
 	expanded := true
 	li := ListItem[T]{
-		value: litem,
+		value:       litem,
 		ParentModel: m,
-		Children: &childVar,
-		expanded: &expanded,
+		Children:    &childVar,
+		expanded:    &expanded,
 	}
-// 	if item.GetParent() != nil {
-// 		point := m.NewItem(*item.GetParent())
-// 		li.Parent = &point
-// 	}
+	// 	if item.GetParent() != nil {
+	// 		point := m.NewItem(*item.GetParent())
+	// 		li.Parent = &point
+	// 	}
 	return li
 }
 
@@ -167,17 +164,17 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.List.SetSize(msg.Width, msg.Height)
 	case tea.KeyMsg:
-	
+
 		switch {
 		case key.Matches(msg, m.Options.Keymap.Expand):
 			blip := m.List.SelectedItem().(ListItem[T])
-			log.Print("curso", blip)
+
 			cmds = append(cmds, m.recurseAndExpand(blip, !*blip.expanded))
 		case key.Matches(msg, m.Options.Keymap.Choose):
 			return m, func() tea.Msg {
 				reso := m.List.SelectedItem().(ListItem[T])
 				result := utils.GenResultMsg{
-					Res: *reso.value,
+					Res:       *reso.value,
 					StringRep: (*reso.value).ToString(),
 				}
 				return result
@@ -198,8 +195,8 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, options Options) Model[T] {
 	lis := make([]list.Item, 0)
 	m := Model[T]{
-		items:    []ListItem[T]{},
-		Options:  options,
+		items:   []ListItem[T]{},
+		Options: options,
 	}
 	if !m.Options.Expandable {
 		m.Options.Keymap.Expand.SetEnabled(false)
@@ -216,7 +213,7 @@ func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, options Option
 	m.List.Styles = list.DefaultStyles()
 	m.List.SetFilteringEnabled(false)
 	m.List.InfiniteScrolling = true
-	m.List.AdditionalShortHelpKeys = func () []key.Binding {
+	m.List.AdditionalShortHelpKeys = func() []key.Binding {
 		return utils.IterKeybindings(m.Options.Keymap)
 	}
 	m.Flatten()
