@@ -2,7 +2,7 @@ package recursivelist
 
 import (
 	"math"
-
+  "log"
 	"git.tablet.sh/tablet/boba/utils"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -54,7 +54,7 @@ type ItemWrapper[T any] interface {
 	// Removes child at specified index and returns it
 	Remove(int) T
 	// Returns a string representation of this item.
-	String() string
+	ToString() string
 }
 
 func (r ListItem[T]) point() T {
@@ -156,13 +156,14 @@ func (i *ListItem[T]) realAdd(arg T, index int) {
 		copy(newChildren[nindex+1:], (*i.Children)[nindex:])
 		newChildren[nindex] = item
 	}
+	(*i.value).Add(nindex, arg)
 	i.Children = &newChildren
 	nindex = utils.MaxInt(0, index)
-	(*i.value).Add(nindex, arg)
 	var top *T
 	if item.Parent != nil {
 		top = item.Parent.value
 	}
+	log.Print(arg, item)
 	item.ParentModel = i.ParentModel
 	accum := item.everythingBefore()
 	for top != nil {
@@ -181,16 +182,16 @@ func (i *ListItem[T]) realAdd(arg T, index int) {
 
 		top = (*top).GetParent()
 	}
-	i.ParentModel.List.InsertItem(accum+nindex, item)
+	//i.ParentModel.List.InsertItem(nindex, item)
 }
 
 func (i *ListItem[T]) Add(item T, index int) {
-	(*i.value).Add(index, item)
+//	(*i.value).Add(index, item)
 	i.realAdd(item, index)
 }
 
 func (i *ListItem[T]) AddMulti(index int, items ...T) {
-	(*i.Value()).AddMulti(index, items...)
+	//(*i.value).AddMulti(index, items...)
 	for mi, val := range items {
 		i.Add(val, index + mi + 1)
 	}

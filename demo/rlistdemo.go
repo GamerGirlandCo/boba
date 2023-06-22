@@ -2,7 +2,7 @@ package demo
 
 import (
 	"math/rand"
-
+"log"
 	"git.tablet.sh/tablet/boba/recursivelist"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -74,29 +74,33 @@ func (w WrapperModel) View() string {
 	return w.InnerValue.View()
 }
 
-
+	
+var lor *loremipsum.LoremIpsum = loremipsum.New()
 func genRandList(par *rListItem, maxDepth int, curDepth int, re recursivelist.Model[rListItem]) ([]rListItem) {
+  
 	retVal := make([]rListItem, 0)
-	for i := 0; i < rand.Intn(7)+1; i++ {
-		var lor loremipsum.LoremIpsum = *loremipsum.NewWithSeed(int64(rand.Intn(10000)))
+	for i := 0; i < rand.Intn(8); i++ {
+	  
 		sts := []rListItem{}
 		cri := rListItem{
-			Name:     lor.Word(),
+			Name:     (*lor).Word(),
 			parent:   par,
-			children: &sts,
+			children: &[]rListItem{},
 			checked: rand.Intn(2) == 1,
 		}
 
 		cv := re.NewItem(cri)
 		if curDepth < maxDepth {
 			curDepth++
+			log.Printf("%+v", cri)
 			sts = genRandList(&cri, maxDepth, curDepth, re)
-		}
-		// cri.
+		} 
+		//cri.AddMulti(i, sts...)
 		cv.AddMulti(i, sts...)
 		
 		retVal = append(retVal, cri)
 	}
+		
 
 	return retVal
 }

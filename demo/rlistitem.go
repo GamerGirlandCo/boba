@@ -23,8 +23,8 @@ type rListItem struct {
 func (r *rListItem) realAdd(in int, ra rListItem) {
 	ra.parent = r
 	var poit []rListItem = *r.children
-	poit = slices.Insert(poit, utils.MinInt(len(poit) - 1, in), ra)
-	r.children = &poit
+	poit = slices.Insert(poit, utils.MaxInt(utils.MinInt(len(poit) - 1, in), 0), ra)
+	*r.children = poit
 	ra.parent = r
 }
 
@@ -100,21 +100,24 @@ func (r rListItem) TotalBeneath() int {
 }
 
 func (r *rListItem) realSetParent(what *rListItem) {
-	r.parent = what
+  if r.parent != nil {
+  	r.parent = what
+    
+  }
 } 
 func (r rListItem) SetParent(what *rListItem) {
 	(&r).realSetParent(what)
 } 
 
 func (r rListItem) SetChildren(ree []rListItem) {
-	*&r.children = &ree
+	*&*r.children = ree
 }
 
 func (r rListItem) Value() *rListItem {
 	return &r
 }
 
-func (r rListItem) String() string {
+func (r rListItem) ToString() string {
 	return r.Name
 }
 

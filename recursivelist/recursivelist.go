@@ -80,17 +80,20 @@ func (m *Model[T]) NewItem(item T) ListItem[T] {
 	for _, val := range item.GetChildren() {
 		childVar = append(childVar, m.NewItem(val))
 	}
+	log.Print("gcgcgf")
+	log.Print(item.GetChildren())
+	litem := &item
 	expanded := true
 	li := ListItem[T]{
-		value: &item,
+		value: litem,
 		ParentModel: m,
 		Children: &childVar,
 		expanded: &expanded,
 	}
-	// if item.GetParent() != nil {
-	// 	point := m.NewItem(*item.GetParent())
-	// 	li.Parent = &point
-	// }
+// 	if item.GetParent() != nil {
+// 		point := m.NewItem(*item.GetParent())
+// 		li.Parent = &point
+// 	}
 	return li
 }
 
@@ -175,7 +178,7 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				reso := m.List.SelectedItem().(ListItem[T])
 				result := utils.GenResultMsg{
 					Res: *reso.value,
-					StringRep: (*reso.value).String(),
+					StringRep: (*reso.value).ToString(),
 				}
 				return result
 			}
