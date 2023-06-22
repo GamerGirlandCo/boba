@@ -45,6 +45,8 @@ func (d itemDeleg) Render(w io.Writer, m list.Model, index int, listItem list.It
 		fn = func(s ...string) string {
 			return selectedItemStyle.Render("🌸 " + strings.Join(s, " "))
 		}
+	} else {
+	  str = "   " + str
 	}
 	fmt.Fprint(w, fn(str))
 }
