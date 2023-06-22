@@ -59,7 +59,7 @@ func (w WrapperModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			selit := w.InnerValue.List.SelectedItem().(recursivelist.ListItem[rListItem])
 			selit.Value().Toggle()
 		}
-		
+
 	}
 	something, cmd := w.InnerValue.Update(msg)
 	cmds = append(cmds, cmd)
@@ -103,12 +103,12 @@ func genRandList(par *rListItem, maxDepth int, curDepth int, re recursivelist.Mo
 	return retVal
 }
 
-func initRlistModel() recursivelist.Model[rListItem] {
+func initRlistModel() WrapperModel {
 	MyOptions.SetExpandable(true)
 	nu := recursivelist.New[rListItem]([]rListItem{}, rListDelegate{},  MyOptions)
 	m := WrapperModel{}
 	kiksi := genRandList(nil, 6, 0, nu)
 	nu.AddToRoot(kiksi...)
 	m.InnerValue = &nu
-	return nu
+	return m
 }
