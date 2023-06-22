@@ -63,7 +63,6 @@ type ListOptions struct {
 
 type Model[T ItemWrapper[T]] struct {
 	items    []ListItem[T]
-	Delegate list.ItemDelegate
 	List     list.Model
 	Options  Options
 }
@@ -168,6 +167,7 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.List.SetSize(msg.Width, msg.Height)
 	case tea.KeyMsg:
+	
 		switch {
 		case key.Matches(msg, m.Options.Keymap.Expand):
 			blip := m.List.SelectedItem().(ListItem[T])
@@ -186,11 +186,11 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.MouseMsg:
 		log.Print("it is a mouse.", msg)
 	}
-	// cmd, toset := m.Flatten()
-	// cmds = append(cmds, cmd)
 	// cmds = append(cmds, m.List.SetItems(toset))
 	nlm, cmd := m.List.Update(msg)
 	m.List = nlm
+	cmds = append(cmds, cmd)
+	cmd, _ = m.Flatten()
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
 }
@@ -198,7 +198,6 @@ func (m Model[T]) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func New[T ItemWrapper[T]](items []T, delegate list.ItemDelegate, options Options) Model[T] {
 	lis := make([]list.Item, 0)
 	m := Model[T]{
-		Delegate: delegate,
 		items:    []ListItem[T]{},
 		Options:  options,
 	}
