@@ -4,7 +4,6 @@ import (
 	"git.tablet.sh/tablet/boba/utils"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"log"
 )
 
 type ListItem[T ItemWrapper[T]] struct {

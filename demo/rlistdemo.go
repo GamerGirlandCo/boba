@@ -1,7 +1,6 @@
 package demo
 
 import (
-	"log"
 	"math/rand"
 
 	"git.tablet.sh/tablet/boba/recursivelist"
